@@ -1014,7 +1014,7 @@ async function loadPeopleFromSupabase(){
   if(error || !data){ console.error('Could not load roster from Supabase', error); return; }
   PEOPLE = data.map(row => {
     const roles = (row.person_roles || []).map(pr => pr.roles && pr.roles.name).filter(Boolean);
-    const classes = (row.class_assignments || []).map(c => c.class).sort();
+    const classes = (row.class_assignments || []).map(c => c.class).sort(naturalCompare);
     return {
       num: row.legacy_num,
       first: row.first_name,
@@ -1357,6 +1357,21 @@ function servingPanel(f){
       ${g.items && g.items.length ? `<ul class="know-list">${g.items.map(it=>`<li>${it}</li>`).join('')}</ul>` : ''}
     </div>`).join('');
 }
+// "Lop 2" < "Lop 9" < "Lop 10" — plain string compare would put "Lop 10"
+// and "Lop 11" right after "Lop 1" since it only looks at one character at
+// a time. This compares embedded numbers as numbers instead.
+function naturalCompare(a, b){
+  const ax = [], bx = [];
+  String(a).toLowerCase().replace(/(\d+)|(\D+)/g, (_, d, s) => { ax.push([d ? parseInt(d,10) : Infinity, s || '']); return ''; });
+  String(b).toLowerCase().replace(/(\d+)|(\D+)/g, (_, d, s) => { bx.push([d ? parseInt(d,10) : Infinity, s || '']); return ''; });
+  while(ax.length && bx.length){
+    const an = ax.shift(), bn = bx.shift();
+    const diff = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
+    if(diff) return diff;
+  }
+  return ax.length - bx.length;
+}
+
 const rosterColumns = [
   {key:'name', label:'Name'},
   {key:'giaoLyRole', label:'Giao Ly Role'},
@@ -1431,8 +1446,9 @@ function buildRosterTable(container, roster){
         bv = (bv || []).length;
       }
       if(av==null) av=''; if(bv==null) bv='';
-      if(typeof av === 'string') av = av.toLowerCase();
-      if(typeof bv === 'string') bv = bv.toLowerCase();
+      if(typeof av === 'string' && typeof bv === 'string'){
+        return naturalCompare(av, bv) * state.sortDir;
+      }
       if(av < bv) return -1*state.sortDir;
       if(av > bv) return 1*state.sortDir;
       return 0;
