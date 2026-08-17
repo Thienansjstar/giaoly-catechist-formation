@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Catechist's Path — Giáo Lý Formation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3EAD6;
+    --card:#F8F1E1;
+    --card-2:#FBF6EA;
+    --navy:#2C2A55;
+    --navy-70:#2C2A55b3;
+    --navy-45:#2C2A5573;
+    --maroon:#7C2E3C;
+    --gold:#BE8A3E;
+    --gold-soft:#D9BA85;
+    --sage:#9DAA88;
+    --bullet:#8D7EA8;
+    --line:#2C2A551f;
+    --white:#FFFDF7;
+    --shadow: 0 18px 40px -20px rgba(44,42,85,0.28);
+    --radius: 16px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--navy);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px;}
+  .serif{font-family:'Playfair Display', serif;}
+  a{color:inherit;}
+
+  /* ===================== HERO ===================== */
+  .hero{padding:56px 0 20px;position:relative;}
+  .hero-inner{
+    display:flex;align-items:flex-start;justify-content:center;gap:44px;
+  }
+  .crest{
+    flex:0 0 auto;width:92px;height:92px;margin-top:30px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .crest-img{
+    width:100%;height:100%;object-fit:contain;
+    filter:drop-shadow(0 4px 10px rgba(44,42,85,0.18));
+  }
+  .hero-text{flex:1;max-width:760px;text-align:center;}
+  .eyebrow{
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.16em;
+    font-size:12.5px;
+    color:var(--gold);
+    margin-bottom:18px;
+  }
+  .hero h1{
+    font-size:clamp(34px, 4.6vw, 56px);
+    line-height:1.12;
+    font-weight:600;
+    margin:0 0 22px;
+    color:var(--navy);
+    letter-spacing:-0.01em;
+  }
+  .hero .sub{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-size:clamp(16px, 1.7vw, 20px);
+    color:var(--navy-45);
+    margin:0;
+  }
+
+  /* ===================== PATH ===================== */
+  .path-section{padding:56px 0 0;}
+  .path-desktop{display:block;}
+  .path-mobile{display:none;}
+  .path-svg-wrap{position:relative;max-width:1040px;margin:0 auto;}
+  .path-node{
+    position:absolute;
+    width:0;height:0;
+    cursor:pointer;
+    text-align:center;
+  }
+  .node-ring{
+    position:absolute;
+    left:0;top:0;
+    transform:translate(-50%, -50%);
+    width:30px;height:30px;border-radius:50%;
+    border:2px solid var(--gold);
+    background:var(--card-2);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .2s ease, box-shadow .2s ease;
+    box-shadow:0 2px 6px rgba(44,42,85,0.12);
+    z-index:2;
+  }
+  .node-dot{width:15px;height:15px;border-radius:50%;background:var(--navy);}
+  .path-node.mentor .node-dot{background:var(--maroon);}
+  .path-node:hover .node-ring, .path-node.active .node-ring{
+    transform:translate(-50%,-50%) scale(1.18);
+    box-shadow:0 6px 16px -4px rgba(44,42,85,0.35);
+  }
+  .node-text{
+    position:absolute;
+    left:0;top:0;
+    transform:translate(-50%, 21px);
+    display:flex;flex-direction:column;align-items:center;
+  }
+  .node-label{
+    margin-top:12px;
+    font-weight:700;
+    font-size:12.5px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--navy);
+    white-space:nowrap;
+  }
+  .node-sub{
+    font-size:12px;
+    color:var(--navy-45);
+    margin-top:2px;
+    white-space:nowrap;
+  }
+  .path-node.active .node-label{color:var(--maroon);}
+  .path-annot{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    font-size:11.5px;
+    color:var(--navy-45);
+    font-style:italic;
+    white-space:nowrap;
+  }
+
+  /* mobile stacked path */
+  .path-mobile{padding:0 4px;}
+  .mstep{
+    display:flex;align-items:center;gap:14px;
+    padding:12px 6px;
+    cursor:pointer;
+    border-bottom:1px solid var(--line);
+  }
+  .mstep:last-child{border-bottom:none;}
+  .mstep .node-ring{flex-shrink:0;}
+  .mstep-text{display:flex;flex-direction:column;}
+  .mstep-name{font-weight:700;font-size:13.5px;letter-spacing:.03em;text-transform:uppercase;}
+  .mstep-sub{font-size:12px;color:var(--navy-45);}
+  .mstep.active .mstep-name{color:var(--maroon);}
+
+  /* ===================== STAGE CARD ===================== */
+  .stage-wrap{padding:52px 0 80px;}
+  .stage-card{
+    background:linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .stage-head{
+    padding:34px 40px 24px;
+    display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;
+  }
+  .stage-eyebrow{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    color:var(--gold);
+    font-size:15px;
+    margin-bottom:6px;
+  }
+  .stage-title{
+    font-size:clamp(26px,3vw,34px);
+    font-weight:700;
+    margin:0 0 10px;
+  }
+  .stage-tenure{font-size:14.5px;color:var(--navy-70);margin:0;}
+  .stage-cta{
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:11.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--gold);
+    border:1.5px solid var(--gold-soft);
+    background:var(--card-2);
+    padding:12px 22px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+
+  .tabs{
+    display:flex;gap:36px;
+    padding:0 40px;
+    border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+    row-gap:14px;
+    padding-bottom:0;
+  }
+  .tab-btn{
+    background:none;border:none;cursor:pointer;
+    padding:0 0 16px;
+    text-align:left;
+    border-bottom:2px solid transparent;
+    display:flex;flex-direction:column;gap:3px;
+  }
+  .tab-main{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14.5px;
+    color:var(--navy-45);
+  }
+  .tab-sub{
+    font-family:'Playfair Display',serif;
+    font-style:italic;
+    font-size:12px;
+    color:var(--navy-45);
+    opacity:.75;
+  }
+  .tab-btn.active{border-color:var(--maroon);}
+  .tab-btn.active .tab-main{color:var(--maroon);}
+  .tab-btn:hover .tab-main{color:var(--navy);}
+
+  .tab-panel{display:none;padding:32px 40px 40px;}
+  .tab-panel.active{display:block;animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .resp-cols{
+    columns:2;column-gap:44px;
+    list-style:none;margin:0;padding:0;
+  }
+  .resp-cols li{
+    break-inside:avoid;
+    display:flex;gap:12px;
+    font-size:15px;line-height:1.6;
+    color:var(--navy-70);
+    margin-bottom:18px;
+  }
+  .resp-cols li::before{
+    content:'◆';
+    color:var(--bullet);
+    font-size:9px;
+    line-height:1.9;
+    flex-shrink:0;
+  }
+
+  .know-block{margin-bottom:26px;}
+  .know-block:last-child{margin-bottom:0;}
+  .know-title{
+    font-weight:700;font-size:15px;color:var(--navy);
+    margin-bottom:10px;line-height:1.4;
+  }
+  .know-list{list-style:none;margin:0;padding:0;columns:2;column-gap:44px;}
+  .know-list li{
+    break-inside:avoid;
+    display:flex;gap:12px;
+    font-size:14.5px;line-height:1.6;
+    color:var(--navy-70);
+    margin-bottom:10px;
+  }
+  .know-list li::before{content:'◆';color:var(--bullet);font-size:8px;line-height:2;flex-shrink:0;}
+  .know-empty{font-size:14px;color:var(--navy-45);font-style:italic;}
+
+  .retreat-box{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 20px;
+    margin-bottom:22px;
+    font-size:14.5px;
+    line-height:1.55;
+  }
+  .retreat-box b{
+    display:block;font-family:'Inter',sans-serif;font-weight:700;
+    font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--gold);margin-bottom:4px;
+  }
+  .habits-list{list-style:none;margin:0;padding:0;columns:2;column-gap:44px;}
+  .habits-list li{
+    break-inside:avoid;
+    font-size:14.5px;line-height:1.7;color:var(--navy-70);
+    display:flex;gap:10px;
+  }
+  .habits-list li::before{content:'◆';color:var(--bullet);font-size:8px;line-height:2.1;flex-shrink:0;}
+
+  /* roster tab */
+  .roster-top{
+    display:flex;justify-content:space-between;align-items:center;
+    gap:16px;flex-wrap:wrap;margin-bottom:22px;
+  }
+  .roster-count-badge{
+    font-size:13px;color:var(--navy-45);
+  }
+  .roster-count-badge b{color:var(--navy);}
+  .roster-search{
+    padding:11px 16px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--white);
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    min-width:240px;
+    color:var(--navy);
+  }
+  .roster-search:focus{outline:2px solid var(--gold-soft);outline-offset:1px;}
+  .roster-table-wrap{
+    max-height:460px;overflow-y:auto;overflow-x:auto;
+    border-top:1px solid var(--line);
+    border-radius:4px;
+  }
+  table.roster-table{
+    width:100%;border-collapse:collapse;
+    font-size:14px;
+  }
+  table.roster-table thead th{
+    position:sticky;top:0;
+    background:var(--card);
+    text-align:left;
+    padding:12px 14px;
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--navy-70);
+    border-bottom:2px solid var(--navy);
+    cursor:pointer;
+    white-space:nowrap;
+    user-select:none;
+  }
+  table.roster-table thead th:hover{color:var(--maroon);}
+  table.roster-table thead th .sort-arrow{
+    display:inline-block;margin-left:5px;font-size:10px;color:var(--gold);
+    opacity:0;
+  }
+  table.roster-table thead th.sorted .sort-arrow{opacity:1;}
+  table.roster-table tbody td{
+    padding:11px 14px;
+    border-bottom:1px solid var(--line);
+    color:var(--navy-70);
+    white-space:nowrap;
+  }
+  table.roster-table tbody td.col-name{color:var(--navy);font-weight:500;padding:0;}
+  .name-btn{
+    all:unset;
+    display:inline-block;
+    cursor:pointer;
+    color:var(--navy);
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:11px 14px;
+    width:100%;
+    box-sizing:border-box;
+    border-radius:6px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .name-btn:hover{background:var(--gold-soft)55; color:var(--maroon);}
+  .name-btn:focus-visible{outline:2px solid var(--gold); outline-offset:-2px;}
+
+  /* ---- coordinator login ---- */
+  .coord-login-btn{
+    position:fixed;
+    top:14px; right:14px;
+    z-index:90;
+    background:var(--navy,#2c2a55);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:9px 18px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 2px 10px rgba(0,0,0,0.18);
+  }
+  .coord-login-btn.is-logged-in{background:var(--sage,#5c7a5c);}
+  @media (max-width:640px){
+    .coord-login-btn{top:8px; right:8px; padding:7px 12px; font-size:12px;}
+  }
+
+  /* ---- person detail modal ---- */
+  .modal-overlay{
+    position:fixed;inset:0;
+    background:rgba(44,42,85,0.45);
+    display:none;
+    align-items:center;justify-content:center;
+    padding:24px;
+    z-index:100;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    position:relative;
+    background:var(--card-2);
+    border-radius:var(--radius);
+    border:1px solid var(--line);
+    box-shadow:0 30px 60px -20px rgba(44,42,85,0.45);
+    max-width:440px;width:100%;
+    max-height:calc(100vh - 48px);
+    overflow-y:auto;
+    padding:36px 34px 30px;
+  }
+  .modal-box.is-editing{max-width:480px;}
+  .modal-close{
+    all:unset;
+    position:absolute;top:16px;right:18px;
+    cursor:pointer;
+    font-size:22px;line-height:1;
+    color:var(--navy-45);
+    padding:4px 8px;
+    border-radius:6px;
+  }
+  .modal-close:hover{color:var(--maroon);background:var(--white);}
+  .modal-eyebrow{
+    font-family:'Inter',sans-serif;font-weight:700;
+    text-transform:uppercase;letter-spacing:.1em;font-size:11px;
+    color:var(--gold);margin-bottom:8px;
+  }
+  .modal-name{font-size:26px;font-weight:600;margin:0;color:var(--navy);}
+  .modal-header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 22px;}
+  .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 20px;}
+  .modal-field{display:flex;flex-direction:column;gap:4px;}
+  .modal-field-wide{grid-column:1 / -1;}
+  .mf-label{
+    font-family:'Inter',sans-serif;font-weight:700;font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.07em;color:var(--navy-45);
+  }
+  .mf-value{font-size:15px;color:var(--navy);}
+  .mf-empty{font-size:13.5px;color:var(--navy-45);font-style:italic;}
+
+  /* ---- training edit UI ---- */
+  .edit-link-btn{
+    all:unset;cursor:pointer;
+    font-family:'Inter',sans-serif;font-weight:700;font-size:10px;
+    text-transform:uppercase;letter-spacing:.06em;
+    color:var(--gold);
+    border:1px solid var(--gold-soft);
+    border-radius:999px;
+    padding:2px 9px;
+    margin-left:8px;
+    vertical-align:middle;
+  }
+  .edit-link-btn:hover{background:var(--gold-soft)33;}
+  .edit-shared-note{
+    font-weight:400;text-transform:none;letter-spacing:0;
+    font-style:italic;color:var(--navy-45);font-size:10.5px;
+  }
+  .edit-note{font-size:13px;color:var(--navy-70);margin:8px 0 12px;line-height:1.5;}
+  .edit-password-box, .edit-training-box{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px;
+    margin-top:8px;
+  }
+  .edit-password-row, .edit-add-row, .edit-save-row{
+    display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  }
+  .edit-save-row{margin-top:14px;}
+  .edit-add-row{margin-top:10px;}
+  .edit-btn{
+    font-family:'Inter',sans-serif;font-weight:700;font-size:12px;
+    letter-spacing:.03em;
+    padding:9px 16px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--card-2);
+    color:var(--navy-70);
+    cursor:pointer;
+  }
+  .edit-btn:hover{border-color:var(--navy-45);}
+  .edit-btn-primary{
+    background:var(--navy);color:var(--white);border-color:var(--navy);
+  }
+  .edit-btn-primary:hover{background:var(--maroon);border-color:var(--maroon);}
+  .edit-error{color:var(--maroon);font-size:12.5px;margin:8px 0 0;}
+  .edit-training-list{list-style:none;margin:0;padding:0;max-height:220px;overflow-y:auto;}
+  .edit-training-list li{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    font-size:14px;padding:8px 4px;border-bottom:1px solid var(--line);
+  }
+  .edit-training-list li:last-child{border-bottom:none;}
+  .edit-empty-row{color:var(--navy-45);font-style:italic;font-size:13px;}
+  .edit-remove-btn{
+    all:unset;cursor:pointer;
+    color:var(--maroon);font-size:16px;line-height:1;
+    padding:2px 8px;border-radius:6px;
+  }
+  .edit-remove-btn:hover{background:#f5e2df;}
+  .se-toggle-row{display:flex;gap:20px;flex-wrap:wrap;}
+  .se-radio{
+    display:flex;align-items:center;gap:7px;
+    font-size:14px;color:var(--navy-70);cursor:pointer;
+  }
+  .se-radio input{accent-color:var(--maroon);width:15px;height:15px;}
+  .role-checkbox-list{
+    display:flex;flex-direction:column;gap:9px;
+  }
+  .role-checkbox{
+    display:flex;align-items:center;gap:9px;
+    font-size:14px;color:var(--navy-70);cursor:pointer;
+  }
+  .role-checkbox input{accent-color:var(--maroon);width:15px;height:15px;}
+  .se-badge{
+    display:inline-block;
+    font-family:'Inter',sans-serif;font-weight:700;font-size:11px;
+    letter-spacing:.04em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;
+    white-space:nowrap;
+  }
+  .se-yes{background:#e7efdf;color:var(--sage-dark, #4b6b3f);}
+  .se-no{background:#f5e2df;color:var(--maroon);}
+  table.roster-table td.col-training{max-width:340px;white-space:normal;}
+  table.roster-table td.col-training .role-list li{white-space:normal;}
+  .role-list{
+    list-style:none;margin:0;padding:0;
+  }
+  .role-list li{
+    display:flex;gap:8px;align-items:baseline;
+    font-size:14px;line-height:1.6;
+  }
+  .role-list li::before{content:'◆';color:var(--bullet);font-size:8px;}
+  .modal-field .role-list li{font-size:15px;}
+  table.roster-table .role-list{padding:3px 0;}
+  table.roster-table .role-list li{white-space:nowrap;}
+  table.roster-table tbody tr:hover{background:var(--white);}
+  .roster-empty{font-size:14px;color:var(--navy-45);font-style:italic;padding:14px 2px;}
+
+  /* ===================== FOOTER ===================== */
+  footer{padding:0 0 60px;text-align:center;}
+  footer p{font-size:12px;color:var(--navy-45);letter-spacing:.04em;}
+
+  @media(max-width:860px){
+    .path-desktop{display:none;}
+    .path-mobile{display:block;}
+    .resp-cols, .know-list, .habits-list{columns:1;}
+    .hero-inner{flex-direction:column;align-items:center;}
+    .crest{display:none;}
+    .stage-head{flex-direction:column;}
+    .tabs{gap:22px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="hero-inner">
+      <div class="crest" aria-hidden="true">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKEAAACHCAYAAAB+pDmdAABPtUlEQVR4nO2ddZwe1dXHv+fO489aPCGGBYK7ayi0FKdIgaKFErR4hVIoLkWLFyuF4i6FFmuBUigaAhSHQAgRks3a43PP+8edeWx3k92QQMLb8/nc3Zl5Ru/85vg9V1SVb5OstagqIoIxptvvnR0dfDV7ts6YPp3W1laymSzZbIZcLk8k4pFKp2lIN9AyoIVhw4YxcNAgaW5u7vU6xhhE5Jt4tP9RH0m+DRCqKtbaboBobW3lvXff0/fee5epn33O+++/z5dffknrnDl0dnZSKBSw1pYBBWCMwfM8orEYDek0zS0tjBgxghXHj2f06NGssuoqrLraapJMJsvX8X0fI4L0APr/0TdP3ygIQ/B5nlfeNuXTKfrCv/7FSy+9yGuvvsYXU6fS1dWFWosXieB5Hp7nYYzplYupKqqK7/tY36fk+/ilEojQ1NTEuHHjWG+D9dl4k03YfIstyoD0fb9XDvw/+uboGwFhPfiy2SxPP/WUPv7Xx3jhhRf4cto0VJVoNEosFivvp6ooClo5T68PUgVOESmvl0olCoUCxUKBeCLBaqutxrbbbcdOu+zMmDFjBALOuBiL6frn7qkf6u99cX2WnmiRg9D3/TKovpw2TR968CEefeRhXn/tdUqlEolEgmg0iohgrQXmDTaA+u6tXu92ZADI8Py5XI5iocDYpZdm1912Y9/992PUqFEClFWEb5vCjxZYYE5drbJIVR8sjrTIQGitLT94Z2cnt/75Fr3l5pv56KOPiEajJJPJMjDmyeGqmgI2aFr1X+v2N3VNqvaTgOMVCgUymQzLLbccP5s4kf0O2F8ikUjNR/ONkSpW3R0a0/O129vb6ers1ExgmPm+Xzbokskk6YYGUu6/xGKxXi/l+z7AYsX5FwkIq1/kww8+pNdcfTWvvfoq8XiceDxe86V3uyEqnM0CJaAQLBsgBqSCllYhEWyTYJ8ckAE6RekK1n3AC/aLli/kDJN8LkehUGTC97bit6edxviVxkv1B7QoqScd2fct7733nk6e9AYffvgBbW1zmTN7Nm1z2yiWilirlEo+fsknX8iTy+YoFotlQKbTaYYMHcqoUaMYPmIESy+zNOPHj2fs2LEMHDSo5oEWF4/BQgVhaCAYY5g+fbqed/Y53HvPPaCQSqfmyfVCgePjgKNAHBgKjFNhWRUGA2NUGA40K6QQojiAhdyuGBzfIcoM4FOULwXeF+W/onyFA2sCiBDoTsbQ3t7OiKWW4rTTf8fOu+wi4fMsipcTfoChmC0UfJ579hX9z0sv8MnHkyiVfEYstTQDBw5j6aWXY+ToMQwZMoSGhhSxGOJ5FtWSloolcrkcbe0dzJoxiymfTeGLqV/wxRdTeeett/n444/paO8gFo8xcuRI1lhrTdZYY01WWnkl1llnnRpQ1t/TN0kLDYTV+tQzTz+tZ/zud/z37XdobG52XKoHzlctZkOONQBYQ4XVVVhZhfEB+JI4oNpgP5+KiK0Xx4IDZtgsjjt+DrxiLC+L8kIAyHjQxPPI5fOoKsedcALHHn/cQtcT6znfJ598offf+whvTnqMptSLrDJ+BhtvGGP8SqsQbVkGGBG0FDAMWA5YFhgy3y+jVCoxZcoUfe3VV5n0xiSef+453po8mVwuR0tzC8uvMI6NN96YjTbZmM232KLsW/02wLhQQBi+KFXlot9fqFdfeSXFYpFkMlnWQeopBFQGJybXVGELFTZUYUUV0jigFXEiOdT/wt7vyTipf5KyHhhcLxpcqwC8K8oTojxqLJ/gQB4zBt9aOru6OPiQQzjznLMl1Fu/7kupVlE+/ugzveH6W/ngvbtZe7XJ7LCtz6prAQmBgkIebAk0uHkBJPwjw8FbEcwaYFYBbyPUrCxg3POrRcTHmGjN9Ts6OvjPSy/pP575B39//HE+/PBDVJXGxkZWHD+erbfZhh123IGVV1ml/PHBNwPGrw3C8AUVi0V+ddIv9C+33EJDYyPGmB65n8EBowtIA5ursL01bKzCABzo8jgAVhslC4NCY8bguF8U+Bi411juNZaZQKMIiNDW3s5BB/+Uc88//2uJ5moVpb29nSsuv1n//dwNbLHxZPb/iWXocgIF0CxYq4gRBHGg62b328piSNIAkXXB2woiW4C3iYDnPkBbCu7b1Bg8n3/+uT7y0MM8eP/9vPnmm+VnGzRoENt8//vs/ZN9WG/99b8x99XXAmEIwEwmw/HHHKsP3H8/zc3Nvep+HpDFgWCCCntZw4YqxILtJRY+8Hq9dyp6ZxyYJMo1xvKkKFER4sbQ2tbG4UccwWlnnL5AQKzmfo8+8oRefunvGb/8sxx/dJ4xqwhkwM+DiNI3hlPdM+F/vwJKMeBtDJEdIbobmOUkfFpVRS1Q5fKZ29rKPXffo7f8+c98+P4HxBNx8rkcDY0N7LLrjzjk0EMZt8K4MhgXlddggUFofYvxDNlsliMPO1z/+uijNDc39yh+Q1HZBayqws+s4fsB+DJUROa3YZ+F/CWF48L3GMsVxjJHhAYR2jo7Oe303zHx8MOlP2I5fGmdnW2cesqF+vorN/CLY2bwwx8BRcXPOuB9fQZT/dlWAdIMdkCMHgTeBsFVnHyxVlCt6KYzpk/XP157Lbf++RZyuRyJRIK2tjZGLDWCn+y7HxMPP0waGxsXGVdcIBCqtYgxqLUce/TP9c477+wVgAangxngxyoc6nuMADpx/fXtu4YdWdxrbABeFuVsY5lsIG0tVoQ/3nADW31vK5kfR6gWv29OmqTHH/sbhg18mksuKDJ02RK2ze23aFStHgApcYjuDbGfg7dWFRi9bobSc88+q+eceRZvvPEGzS0tFPMFOrs62WjjjTj1d79j7XXWWSRO/f6D0FrUGCSb4+zjT9DL772H5uArqScPx/2GASf5HjuqUMSB8ht2B/eZfBwQpwOnez5PeUIkl2fk6FHcduedjF16bK8csXr7fffer6ecfCr77P4hp/ymCMbHz8I35wcPzbEQjGmIHQbxk0CGSVm/xKBqUXVGSFtbG2edfobefttt5WhWe3s7LS0t/PzYYzj0sMMWmrFWvtN+gdBarDGYzi7uOOIoPemvj5BoanLArNvVw3G7VVU4wxrWUKGDb0/s9od8nB8xD5xnfO6OGkptbWy/44788cYbRES66YfVL+WC8y7Uq6+8lDNOaWW/n2WhS7H+ouJ+86M6MHrLQvwsiO5dwxWhVu+7+qqr9MLzL8BaSzwep1AokM1m+dFuu3He7y8oi+eFoSf2HYQhAHN5Xj/0CD3o0Ydoa2km4vu9AnAjFc71PUYG64sr9+uJLM6ZbYCLjOXmKJQ6Ojn3/PPZ/6ADa8RyuFws5DjxhJP1wftu4cpLs2y/exe2LfCsfOtfXug9LTkwxg6GxIWCtLhtRIDacOu999yjv/nVr8nn88RiMVSV9vZ2Ntt8cy6/8gqGjxgxX/WkT3fWJxCqoiII0P7zE/WwW//MPwc20VDyqRfCIQA3VuFC32MgzvJdkgAYUujOiQKXeMrVNs+oQYO58567WW755SX0AnieR0f7XI447Bh99h+PctO1BbbaoQN/LhhvceP8ATtWC5G1IXEjeGtINUes1hUffughPfG44ykUCuVEk472dlZbYw2uuOoqxq0w7msDsW8CQtVxu/Mv1ttvvZV/DmgiPQ8ArqXC+Us4AKE2lHiCLxwRSfLB1KlcdumlAGUAfvnlF7rPXj/Vfzz9V264ushW23ZQanX63+IFQCg7pyQCpdcgMwFKD2kltlTJcvd9nx132knOPu/c8rq1lsbmZt6aPJmDDjiADz/8UD3P6zUo0ReaPwj9QJl55DF965LL+VNTimgPOqDBAW5Z4FzfMJQlG4AhFXDPkQGOLipHNDRz34MP8rfHHlPP83jn7bd1373354P3nuWuW3NsvXM7AJF4EPFYLEmBkgOitkLmR1C8WSuhhAoQrbXsvscecuIvTiKfzwPgl0o0Njbyyccfc9ThRzBj+oyvBcR5i2NrwRiKUz5Tf5e9OG/6VK5NRmmytoYLBg4B4sClvsfmgRGypAJQcfeeB35rfD4VSIuQEEGN8GqxwMgxY1h33XV5+T8v8cEHU1hrzRjf26Id31fSacuPdupixOgSWlgc9MF5kQfh20zeANGfSkURCRz0ACLOHXfHHTQ1NZX14Pb2drbaaiuuu+lGSaVSC2Q1z1cnVKDwsyP1rbvv45BBadp8H4/ayJHBcYrjreEIa2hnyQUgVEDYBezrlfivgUjJJxNwgpQYikVnLSaTKeLxKPm8pViMEYvHiEaUB+74knU3zWE7vy2ruD8URvKB5O0Q3atGRwyBNXfuXH682+769ttvEwLO8zza2trYe599uOQPly1QZCnS6y++D55H9u77Ve57iMdbGphuSzRBDRc0uJe1mQoHWEMXi48D+utQmJ8YESFWKjFi4ECWXX55p7SjGDFlh721lkjEY/acWXz04SekUkIqZSuuuMWeQs5nIXsgyHAlsmUZiKE+2NLSwm9OPZVDDjqoHD3xfZ+mpiZuv+02Vl5lFf3ZxEOlPkdyftQzCFXB8/C/+kr9S69gmmd4TCxxre1XwRn3g4CfW0OcSmz4u0AW8I0h05ll7fXW45rrr5NSqQTUjuHwfZ9YLMa999ytRx52NE2NKWIxpZvivFiTpayEZPeD9HOKWboMRM/zsNay+Raby5577aU3XHddWSyrKqlUissuuYQNN95IV1tttX5ZzD3jJch+yd5yB5G33uE/qTifqiVGdzGcA3axhrVUyPR6wiWPQj03zOYxxoEuEokQqRoF6HkekYj7lj3joQqRiBIPOmvx1gfryQciYKdCbiIVkVz7NR159FEsvcwy5HM5Qsd9NBqltbWVs884k3w+j+d58x0rFFJ3zIRc8LOpWvjzXygmEzyH302yCA6AywA/saYcH/4uUZhACxVLN/QN1jcAxYW/IlElGl3SOGFIJRAPin+H/AXhUwOUxe+IESNk3/32pVAsliWC7/s0NDTwj2ee4eqrrnKpjQsMwoAL5u6+F+/jT5mSiPEqljjdM5gLwA7WMCZYXqI++vlQPScsb68auVY/DkWCPaMRlkBxXE3WPXT+DPBf02oLOrR8991vPxm/0krkcrnyNmst6XSa6665lrffekt7yymtp1oQBlzQzp6jufseJB6PM1ldsmeUqrQ1HOiWBnax8p0DYEg+/bctVIVYVIlElmQQBv4BzUH+N5X1wH/o+z7NLS3stPPOFAqF8oeoqkQiEWbPns3NN/2pz1erBWGA2uITT+H/931sIs57asvJpiEJzoe2uTUszXcbhPWccH6k6rhgNMISDEIA3yXJlh6H4t01YjkE3e577M6YsWPJ5/PlbdZaGhoaeOD++3n1lVf6xA0rIAy4IED+0b/h4YZMThLtppr6QDOwrcqS44XoJ4Uumn49n1RAuGRzwjrKnwMapqBoOZIyavRo2WSTTWpEcjmW3tHBTTfcCMy/GkQtCIHSm29p4V//JppMMk0tn4rWiOLQIl5FhdVUyPHdM0hCCoqQ9PMYB0LP0yXQOq6nwH/oT4LSfTXcMKQfbr8d8Xi8htuFuuFfH32U5597Xqura/RE3UBYfPZ57JxWYl6Ej1Dm4pyJ1S/DAusHI+K+q5wQgnB+P0DkwgWQiCum9zDAkkcCFK4GzVOtGwJssskmslKdgRJyw0wmw3333ONOMY+vMTiKsigu/vs/YARBmYVSpHZojQ+0AJt8h0VxSCq1w0z7dIxCOm2dXv+dEMfBwAf/RfD/WeaGIXdLNzSw5tpr1xgo4LhhKpXi6aee4qMPP5wnNwxA6H70P/5ES6+9gcTjWFVmSmXsBVQMkhVVWEGFPN9NURxix9J/tU4VGhu/SyAEMEF5i9uC9Yo1DLDBBusTi8VqQBZayjNmzOCZZ56p2b+Hs1Pu6dLrk7AzZyLRKCVVpkntQWGYboWqwelLCoWj6uqbzqMtCAitQnOjexnWCtbSrfnWhebrWx9cat8SBX7D0sNgP9YwzhyK33XXX58hQ4dSKpW6iV3PGP722OOUSqVeoyg1jMx/9300qGJaAL6ikmFG8D8CrMiSlyUTBxpxg5jSQUvhKi8kemhJuuvC8yUBVEilFGIQSSkmDaYBTGOleY3gNVe1JvffJOd7hW+JgnGRdg74z1dtczRq1ChZccUVKFS5asCJ5EQyyWuvvspLL77YaxQlDHoCUJo0GTEeokoOalKyQi7YBKysssRwwfDDeUyUyaLEceOLi1LxA1a7YkIu6AFzUHyCcbZ9UAzVQjKp/O2pNNNnGqIRSzKpxGOKBPplxINEwpKIK/G4kkgoibjiRZSRI0qsskphMbX2gg4oPQ7R/SGoEhGmeY0ZO5ZSUPm2msJUr+effY5NNt20FxCq8yPYGTPV/+hjiEYQ1XJ1q3DgOjgQDldhlC5ZDuoo8LSx3GoszSrYeVhq4S8hEBtEAnEx/6dVhVgU3v8gxhtvRut+rFwgxLQYMOIAmOkSdt6hk+uunYn6i6NrJxTJ/wSdpshSElZ2AFhhxRXL9YiqKbSU//PSS5SKRSLRaLd8wwhWwRP8Tz7FzpwFUdd5Pg50IYWW8WgcN6y2mhdnCrukUYVmFZqAQqmE2tDk6l3gKlDwPPKFAmEK17zIWku+UCAWz5NKzp+dhe8rFo1QjHqLIfCqKfAT6DTw/wuRpah21ay44ookk0lnnIiUH05VicfjvPfue3z00Ue64vjx0h2EwUuwn36GdnVBQ0OP44jBSYkBKkRYshIWBNcvVoRCscjPTzie9TfYkGw2W07R6v1YoVgqMXz4MLfeA1JCBX2TzTbj9rvuCvLo5qNNqjtXyS9x3tln8sYbHyOyuPsaAnDZ14HvuS1Bf4wZM4bmlhbmtrYSiUQqdkRgJc+d28pbkyez4vjx3bhl2aVq57Y68yw4af0g9XB5BEumW8YVxHTcat1112OjjTdaaN9QmFM3fPhwGT58eL+Pv+qKP6gbJLS4f9ahXvhvV2Ov6n4HDR4sgwcN0tlffUUkGu3mn/J9n/fff7/Hs5oQdHbqlz1drkyhjjRcF/+uqiehqkwwkM1mACgWi+V5UebVwqGO87xGAMRw376cU1XJ5/P4vlMNFn+3YvDy7Tug7Tj4uLtOp9MMHTbUTcvRw5FiDJPemFQel1LNDSsg/OILpymXEzSrThCsR4FBS0Rn1ZIA0aqbDifRqZ4fZV4t3G++1xHp8znD6laeMRVdcLHv2DBgMgV0SvluQ0ANHTasPDdMzVGBXvjhBx/wxRdfdHPVmEBGYb+aXTMsLEIt97A4X1szi6kHYT4UgyXgJbOY32MYxMyC/aq8LQRUIp7o0QUT6oWzZs3iww8+6Pa7AdBsDm1vD2LGDmRJHOBCTSUsNr6kJS2E3RYL8p4X53e8ZIT5Ai6n07v9Ep3H1BXhtB0ff/SRO7zqYSMAms2qdmWcmFLF4jjHQCqxYw22JbX/Qf3FgeL0oOdWjQ+ZH/V1HG1/S+2V915iOjTwutuPu/3S2Ngwz8MAZs+e3e0nZx3ncmguX7aMwyjDIBWsVHTEqEKUJTN7phqE5f+LYK6S/p5PqhTCJYIRhmQ/r1pxd149iWV3cs/5+efuuDo/IWi+AMVijZveAwZTeWEOmLLExYyBcm3qcqWV4G2HnHB+sClz/j4ArD+cMLSog7UlRR470pnBQuUZotFY7x9hUL122tQvKJVKzpcYOK0dJywVwfo1nFBwjunqBAahNqFhSaCwSxIKniqRaJRLL7yQW266SX2/fvRMhcrPbAxdmS423XQzjj/pxG7efqjET5999ln9w8WXkEgmUe1dXkjVjakqn035hGQiiguULik0N/hf0bSN17sHITROps+YwZw5c3To0KHlTnSc0LcuB6mOYmg3x3R/9cH6ig3V5wlpUTu/Q302C4gRXnhzEsWSX76hejEd3pMAMePR2dZGc3NL7+cPOMGML7/kySefpKGhAVU/+M2dWZWaZhXUuu2JZIKurihdXfmF+NSLikIx0okL3ka7/dQbRSIR5ra2Mmf2bIYOHVrHCesotIaH4irsh8ZJf4ZAhsckgagYl5wb+BgFxQRvI5y3JEgW6jOF2S592S8sVbKJCnGFZDxNIiGV1C2FZPCs4FSROC6DfI5nOFuVxDz0nRC8kWiUpsZGkqkGslmXOWM8JeKBF1GiESUWg3gszKCxJBNKKpnHmDwbrJdbMsSMAJoFLYJEy57j+cXXRYRisUg2m63ZHgEQz3M+Qq1cowiMwblp5obbRCmi5UHePVG5Cr4I1hjeU8tLxRyflQp8aS1ZgZR4jI7FWDoaY20Vlvdt6H0qX7+3c4fkQc28dj2RUpkVankVrvQ9IlTKAFfPAlrvgg/9oh+qcq7v488jYqJVS/mCZdSoAhMPbmXgAJ9UUkmlLKmkkkw44MXjLr0rGlNiUVc2RCKU8+UW70SGkMK5tijfcDab6VUnDrf7vk++UKj5zXHCeMwlugXdGeYODlFhhApfBSPuckBGwPTipvFxnE88w5N+gTs6O3gt5pEYOZLRY8cycOBAEqrMmPUV//7kU2ZOn8EQhK1SaXZVj419xYeakiIhxxMc14riANIGfBpMojhblE4CcYsDT4M6Tj4CYbi6hFbBcd1Q6PWmHoTrsaAfoj383hMJ4PtCY4Nl/73bkWbcu6p+kN6aT5hVt4RQ9wGxbW1t8zwiHDhfKtZyTMcJk0kkkUBta80l0rgs6tdxAMjiXn69hRz2Y5MIH4rPBZ1zeXXwCLbacz8u2eYHrLPmWgwZniozUC36fDH1E335pVd48JFHueeZp3lUYY94ikOLLl2sMzh3NLh2CfhI4EVR3hP4wMA0Ax1AIXAb1RtQcVUaVRmjyopWWAXY0BpG4T6YkPP2pAaE6kEc55rqq5Q0RslkDbO+8hhqfPw6ztYryGRJAmDPlM/1VaftIYtGGtIijY2q9gtn+QU1qiPAciogWi6EOYueOUiTER4u5TmHGGvsvi93HbYNq6ylwOugL0KxoKqN4K2LRNeTUcssL6OWWZ5d99qTvz/0iF540cVc9993mNTQxKlF2DDI3p4FPG6UZw287MGX1rp5f/NFpFTCC1ws1SpCeE9Fz6MrGmVGNMrLUYOnyhjrs7kVfqjCWirl+ZR7A2IEIdpNWPdOIlAoCqWSQASMXXBwLQqPzcIDejiHasXn19ra2mNia0jhJEP1k4I7EKbTyKCB3UbaKLC0CkkqCv5UUcLBuGUx6cEVuSJ/GTKME3+5Nvvs1QVyFHbuJ26SliAvzLkmPNRsoBrdG/UOEBNp5Ps77STrbrSRnvrLX3Hbo4/wi3QDx5bgCyM8aZS31ZLJ55B8lnQsxqghQxm79DIss+xyDB85kkg0RkRclnLBuuyUubNn88nHn/LJJ58ybdo0OtvaEM/js2SSP0WFB3zL9lY4yBqWxnHe+vS18EOsy5HulRT3kosFIZdzD2ytywsh5KZ176cnLilhf1XfUE8mfF8cnOF/rV0PrXToDnapfl/0AFwFJA4SDVQIQz6f5/PPPy+XyauncMhnNBrt5tSOhHWpvVEjKfq1+YR5YCUVRih8EdzI51RGoRkgYeCcTuXJcYYbfl9krU3uwLa3gYLxQsFYffc+4r+A+C9A5GaFCyjJBBk4ZIhcft0fiRx5lN5+7738qqGBznwWP5+jOZ5g3XGrssX3tmONtdZm9TVWY6mRA8X0wXM+d85s/e/bk3njjTd57p/P8Z+XXsLv6iLXkObWiPBvv8Tx1uP7QTWJel03BGF/OGGxBLm844ReNDiJR8UKqqZqgIS16CyoD74VrA8l3+maNtxWNXJPVZy7p0p5FnEfvucpkQhEPHXl6iIVI0giwcdRf09191E9JNEBNwzbNYKNYq1zPM+YPl2nT59edkL3RKpKLBYjHo8DFf9qOQXWW26Zmk+ibJwAayJ8ihIBZohSCPo16cFlvuXtzTP87dI5tIwtoG24HhdFg7l3615T5VMrvQL+D4gkr1JfDhHP8zjjvLP45JOPeOfdd9lw5bVZZ/3N2HCjddh00zE0DpgGvA/2aSh8pJqdiWomOG8CZBCY0SDDwBuHia5Py8ClZKPNtmSjzbZk4hGH8a9nn9c7b7+Txx57jFipwNRUkhN8nyOt4WfWlOdWDl2wBroVB+2VAsOiWBSyGQNZ+GqGR1fGMLfN0N5uaO9w/7N5543I5oRMRshkDF0ZoStjyGaFXN5QKAiFgjtfqSQBGMH6DngOhA4Y1e9dBMQonnE1DaJRJRZ1g6pSKUtD2tLUpDQ3+bQ0W1IpxTNKc5NlwABLS4vb3tjgfkskLBINgRtcKLoUrpSwW536+ee0zp5NJOISWuu/NQGs79PU2MhSSy0lQJlrltP7zbBhbtRd1dMojgusq8IDQWGkT0SZLcogK5zTAVd78PMVi7wxyaN5SoIVViiQHuKXq6n7hfr53KrkgkSAImR/hpf01MpB0tQySG689SGd8eXnjF26RLrpdeBOyD6BnftZWbyXBwvVAyHEvAD54ai3qarZBo3sjBcZJptN2Eo2m7AVTz3+N/39BRcwefJkUo2NXCKWTlzZ47CMuOAYWAT6XA5EALVw0pmD8I0yd65HJuPEc6grVo8x1jAhIDxeKrN/lp+xSjw6QVX1kusc7jWklfPXOsndmOjwuFDcRjxX3DMWc+6kVEodYBtda26ytDQrTY0ZUg1zIHqdQp4BLQN47rnnKFgfE4joejK44RVF3+e2225Tay0jl1qKHXfeWSLhHZjllkEaGirzloS1aYBVrWGQsXQAM4BPFLIxpW37dg4Y5PNlm8c1tzeRbfPQEowZXWLjjbLstF0XDSOsS8KtetgKlSgXYMwdh0kOU2UEgwa9yqDBL0H2MWzrF44jmTDdsSfbvKfXYEGnI8V7EO6B0gUQPVht5HDBtPC9bX8g66y3rp76m1O47777SKXTXOtZDHCsNWXRHPoj+2wjiPsOhr8TZ7QVil4wl3GomcRA0XKJERskLoRS0BKABQd8q5XfKpJbatZ7W65pUr3slrodG4DULxr8AvhzIWOhQ4XPLPgh96UZ5T2UXxN6WKOxGMPiCWxVUnRNUyUeidA2cxbnnvY7ZrW2sve++7LjzjtTBmFkhXFiRo1U/8OPkEQC1FnEeWAcsLYKT4niC7ysyglpuHiI4g1WZJ0sdukCHYN8Pm41vPxikocfaeCmW5rYf5929tu/w/nBehzK6Lu3o22Q2QEhhtq8U3hNGI8UKj6pvo54DtlHIC/sR5A7GRO5U4lfiC9bS8ugQfKHa65m2LBhes2119KQTHKdZxmhsI8aOumfYRJetQTsHRN2tEKGIP4e+gKr9p3f8tf5rz2s97aswY13O85T1Ks6d80+CZQUYeUyq4rv254/AEJrwOV1TkslOcb3WWH8eIAAhNYiLc1E1lgN/7/vOcdc1Y3GgU1VeFIUo/BuRMm2ehSuGuiGo0bAa/GJr5Jnra26WGvHDg49op3H709xwYUDeePNBBeeM8uNHujRZVGtheXdAPzy1Rc0cSzsyhC0xgGyNAn8H+IlLlQrx4gx8JvTfydWVa+95hoSDQ1c7FmW9YUNAhdOn3XCqivPtZBRFmhOl75I/p72qTag5+GO7Hl7Dw8oPeggtY6w+vEk81pzb7IB6LCWDuvTmEoBlWl7AIisuXo3lAjOj7aeNQwL1t8W5TOBRKPFNFtM2mKzQuZfSWaeOoRZPxxD5pyBbLtDhvvvmca778U4/dxBkJjXywztUqG2NsLCIku5KDglyB6LKZ6sYd7Gb884XXbZeRdyHR10eR4XGstXOAD2pxxI+CmVqA0N9qdJH1o19cR1eqq7Exq9PbVSD63YQyvUtTwuktZTy/bQcsBkLAXPY/CggUAIwlAkr7Um0tTk9MI6V81ywKbW6SIzgX8ZS8w6zGLduzVpxRtgMZ2GrvMGM+egETQ3W664bAaP/z3Fmy/HMcl5Ff6pFgaLigLxLwK5czGF0zW8n7PPP5fVVl8durp4wxNuNZak9p+TWaAQsJY+2jNfi/oC2kXZ+veRCV9YSyKRYOTIkUAdCKNrriaRVVdGc7luMtMAW6opx27/LVpbpTX8/IKpL8wAH/tgI+2nD2aZVUqssVqe+x9u6J+CtcgoQJ0Aud9h/FvU96F54EA55be/JZlKEbeWOz3lTVEaFqAWY4GKQbDALHFerHEJJIPLPXjflhjQ3MzIUaPK2x3gfB9iMaKbbASl2oCn4FjpBiqsHugJb4rygWjP+pICVpBGS/7eZvg4wmpr5XnnnRjkK7bCt0uK44hA7ig8JqlvYZMtt5A999yTfGcnXxnDPcbOY+61Xs4sUFSQokBWsJ0G22Hw2w1+m6FU3ea65rcFrd3gdxj8ToPfZbAZweYFWxC0KKjvpE9oKHRjRV4P7evoAAuJwnFL0wTe94uMHDqMocOGC1RPKxZywy03Q66+zoEy/AmnIwwAdrDCa54yC/i7KKsGkYZu9xs4Ge0sD55L0TTQp6tLnFq28J7ta5IFPLDtkD8eSTwGxJh4+GE8+eSTfD59Ok/EEyREWbYPWoICYhTNCqUdOkjs1AXthkgJvIJB8lVOvSKQM5AVyBo0J9icoDm37NYNmnfbHRANWhBsEQfIMiilrBb1RGV+UvW/HBIUraybyjapB2L5f09hn+pO6K2jlIjC2wa+9EtssdxyJFJJl3Fdf6fRDdeXyHrraPHZfyHpVFmBMzilcks13IrlfeA5UQ6AcsHMHoEI8HGM6ekSyVDBWqxGSvlOoS0+jYncpH5koowcO1Z+tNtueuGFF9KaTDJXlBX7ejYrpBJw76Q4r3QI8biSDPMJg9zCWEzdZAkRn9RQJZ1UUnFLKg6JmJKMKomIkvAg7kE8kDgxEaIKER8ivmBKrrn8NAN5qTgaiuJkX9ZAxnFUzRls1qDZANg5weYDoOfF/Q85blHQEqgvgXtNAi93m/O1ARCkjVR51UWqEC6CBJEFRVBjeCsVJW8tq666KuBCd7UgDGb2jP3w+xSfebamc8OPdzSwnTV8aCzvivK0WPYIfGo9fR+egdwcw3/eSTB+hQLEweZrxtkvUgpDW1Cr5oa5e65p4Ab4PeLtrDBcdtvjR9x+++20tbdj+pN6oi6LesYXET5+N0ah6KITYaTHGOe8Nl7VsgmWPRfv9YIYr5ueDGJxJRa3xBNBPcOEkkgqyaSrf5hMOpCn0m7dC0Jr8WZLw1JFUkEGdzKuJGNKIgpxT4l7EDVOTEaBiHXg9nwJzGOBggQAt5AbCPo7yDVCPgiX+hbNZLBdXdiuDDaTwWayaC6LzWbRbB4/l8MUCrTm87zUNouGaIxll1uu3GW16k6AjNgPtiZ7xTXozK/cHFlasfQKuPlL7sElMzxklO39ygCo6tdlFZIJ5d2ZHu99HOGYg9q+ES6ogWff83DVT8PModD4Dm/SAjnwSxYjHuJ/hCndjjXHsczyK8hmm22md99zT7lsSF/IeEpXxrDd9zv4yZ7tfDIlSiZraGs3fPmlx4xZHq2tHm3thkzGkM1JEBt2qnihUFHTTfiBBOs1ki5QCrW8HJDUrocfWQjwSADwaMyF5+IJ1xIhoFNuOZUKwJ1y4btIpACSIpKypNIR0oOGkkqnSadTJJNJkokkiXicRDRGLBohFokQM0aiIsR8q/F0Sp748y06+Te/YbnllmPNdddx/WVMHQgDx7U3dozEd/ihZq/8IxJvLuuHobtmBRV2soarjWWSKP8UZVsVuqjjhgomptw8Oc6IsXk22SAH2W6G90KjMD5qouAlgC54b3KMf7+c4JMpETIZQ6koNKUtg4f4rLN2jnXWyhMfoJBVbBFM8U9o5KfgNfO9703ggQceoFAszvfaIYm4wYtLDS+xxfZZtihlKQd8SqAF6OpyiQytcw2z53jMmu0xd66hWBTmtnnMmWOY0+rROteBt7PTkM0acnmXzOD7gm9BrRPr1RxAcFzWFeB0AKzu75IPpZKQzUk58UE1MHY00C+hG7AljKjr6Sg+IgYj4mr1BLOeRqJRorEo8VicWDxOPJHQRDJJqiFNY1OTfvLxJ5SKRSZMmMCwYcOkkkXTC8V33ZncX+50n2dVLBnXl+yowoPAVOBuY5ngezVJW2Fm9kso980RLvhlB6ZZF9lM6NYGnZ+CmdMMDz2R4rnnUkz5KEpKYECLJZa2dBSFqW/HmPJRDD8jrLt2nh/v3sHuu3SSHgy2801M7FnF21E22nRjxowezTvvvtv3Qe0BGApFgSwUM1LmRqH4b2i0NLRYlhpLxXoNjw3jW6UgLzErdGWEjk6XfTO3zWNum6GtzdDW7lEsOh7R2WXo6DR0dbmWyUqQjSMUCtI9E8cKNgCxqqDBK1aX9RAsEywLaCdKERGPdLqpZsy0qmJVKRSL5AsFOmwHNhjTbX2fzs5OrO8TjcZoHtDCrrv9qKbLuoMwAFxkvbUltv22mr/9rooDm4qBsmLADa8xlpdFeUqU7aq4YQTo9OD8rLLGxjl+vHPnIuOCqgaTtnR0wF03NvLK3Y00vx9nu2ZljWbLUE9JFgxe3MeOKZLZIM97g9r5x3SP229v4qjjhnL/ww2c8ou5rLtJBlt8DI3uyOChI2SdddbR19+Y1KeqXNXkeQpxiPraPW27Dmw1FPaPgWhKiaaVRgPDjd9zPmI11YU/CkWhWBAKxeplB8hikeC/A2exVFkPfwuzforFIkX2xZf1KeTbuP0vtzNz5sya3MGaahaeVx5Pkmpu4ahjfk5LywCKxQKjRo9m7XXWEaDcp73P/C5CYr+9KTz0aCWCUqUbFoFdrfCogc+AW4xlM98jGvRBGrjJWt5u9Ln7iFZIg+1a+FxQ1SCeZfJ/Ivz94qG0PJfkxIgwOgZ2NhRmCCULXYGoEd8ZDmstXWSj7TvZ+8JZXPTXNLfd2Mx+H8Q567dT2W2fv1MqzVYTHSTLLr8s/S3QIQKZnKFjpssNrMZNGKPVYLlW9Enlx+rN1VyJeXhBqBimoRHkcgshHoFE1FaJabpxaGq2B7avWEQGYpNHEYmvLk8/+YRefeXVeD28yOpkVhEhm82y9Tbb8KuTT54n6+kZhAE3jG60geOGd91bww1D3XAcwp7WcHGgGz5kLD8JEkPf8ZQrMvDjH3Wx4Za5RQBACQZPWzK6Po+fK+z6zEzGDjFkfKUtKK4g0cqHEyr5PtDxeZS2iwYx9G9pLj1pNsuNKfL78wdxwsmj8O0M9jzwNWAbllt2GWLRKHYeFRWqybdCKmX5x1MpfvxqnKINAkkKfhB5sQRpU2hVKpVUgpZaAWCPeOtpY90Bodekermn9eqcRenxN4tIGszP8YzVmTNmUMzniYYF0KvOW0NWScUTvDX5Tbbf9oeaz+UYNGgQl17+B0YstVRNJYvegwEBN0weciCFx5/ophsKTizvYg2PGst/gVuNZYI1jBC4sqQkRxY59tC2RTDrjjMBRSJo5BhSqQtl+Peu1FkvnsVwbSavvov31r8srRwtMcUkSnR+GCN71AiOOXUWpePncMnFQzjl9BiDhr/P97bdhjFjlyGdSmH9voHQqPNorNrh8fPZUTKAldrEgHAsdAmlJJVkge6JAy51rv4RekosKEnVctgUSqI1163+X9IgTUSCXEFqs/orLY/yPlbdAH+JRsnVFVPt/l0oRAy5qV8w9fOptHd08LOjj2bEUkuJ9X1MVaZz7yA0Bqwlst46Et9rD81dez3SXGspF4CRwP7WcKqxfADcYSxbi/BoTjlmpy5GrVhcZMYIkob4MQBs+ZNdufzWm1l26ixisSj+/AodKeALXkqxJZj92yEcc/pMPvvxXP7yp0ZO/e2fWWnVnXX02LGSTqd1XoPfa+/Jcbm0UVaPVQrM1wcewrV53eP8SjVVA6CnDJrKsuJLhQv7KCUEH+09i0aqPxZDiZgDuSrFkqUoUvPx1IMwBPPj0RhTPMPwWIwdXp8Ml12lHDWx5sH6FBZNTvwphUcfR2fPhkjFb2hww0C3s4bHRflHIJKfLwlLLeWz7487uiveC4UUF25rQ0p/wspvGT10KRl18IH651PP5FiJ0xpyw/mRBRNxLypz/hBO/OUs/rtJglee/Zjzzz6L8y+8iObmZqzfd3YuQBahSytj3xc11cO1GvQRhIhWbwvBL90+kHrxWvmtGmamG+q0an+LS0mdLMo9WLK+zwQTYdV//IvMtj8g5XlubrWggNK8+ZMx4Pt4yy4jyYk/RbPZGpYmOMQ3AIdaQxMwx4NX8sIm6+YYs1wRXQjRkeqoR81jC1C4BuFLBTj8ZwfLG5ttxP1d7QzwvL5rAQEQcxlhxG0tTNysk+ZhjTz4wMP89eGHdfCgQfj9BGGJyof6TTShZxAFj1eTS1gt8qtzArM4ptJV1TqD1jGfVr9fF3CdsXwBpIxhu84cDZtsRPyQA93tVU3dMX94BAhKHLS/RDZcH+3K1KDKBBdcX4XdrSGnkPaUTTbKugSGrxkhsRZMAsSrP1eYfDANKV6CtRCNxvn1WWdy5fBBPFPI0WL6B8RIWml7J84PPoiz6Xo5uvIe1/3xWqZ9+SXRaP9y0MJRe4sD1QO0p7awPgZwTOllUZ4JiiZsoMIWJYv+dH+8dLomXxX6AsIgpiwNaVK/OB6JdZ+jAlyH76eGkSUh2WJZd+3c1y7uY61gUvDOmzFa53iYVE1yj7uqAPmLMfoP9S2susoqcuL55/LrmPCEX6DFmB6qpvRCPtiUJfJ0A3u3+DQPN3zw4acBCPue0BW6sPrn2PluUGgr3GQsc4G4MezZmaNlow2J/GingAvWwq5vgtJzbCi21RaSOGBftL2jZhxnKJabBBIlYcjQEiOH+18LhL4PJq289mKcfX46nCOOG8LsLzy8GiCGMSsfsofjyVfqW9hxhx3kmDNP53iK/MkWSRvnv+wLV/QMdBWEzV5JsQmQj0SIeF6/SnI4cVzhhr2l1Fe33tLxe2r1hkh/26KiUDV7yFieF2dWbW6FLTDYQw/CSyS6cUHoKwirKHnCz4msviqaqdUPI0Arygwfhg60JFO2klbUT7IWvJTHB2+txRHHjWBOq+Gfz6c48LBhTJsSqQNiIJb9dyG7H54UsAr777+/nHbeuZwTUX5ZyjDX82iiYjH2SgoaUbwvouzbHqFRdP6WdvdToLgX0oybC7ApWO6pNVGZBjds1dPhhi0ZtHjQYlUtGrRIVesppzV8jt4s6r6OSelpjEoC+Aj4o7FYoNF4HNCeoeEH2xDdeQd3aa+7udh3GRMYKWbwIEmddrJ27H8I4TRkodOyTSCDEo9ouf5KfzGoKpiY0j6rheN+keLzqXNobHA216uvJ/jZkUO56ZoZDB3pY3PhdxDmBD4Osp9K4i9ibYR99ttXhg4epEf/8pe8Mn0mJ6Sb+X5R8VDCug09fYVGIRNVNlbhBxau62W/Hu8fB4rpolwcsXhS4T5GA3AE/yNaGVJaDZ5IMH9gNZhq/msIMCmDrP5/T4ZLvRFTb9DQwzrM/x2G8igLXOD5fIbzPf64pGzQ0IgedZjrv6DkTD31L3M9FMtbT5DEYQdr9uLLy77D0DRXcVka4bhh7TcQ3QHn/N7jlden0tIMhWC8bnOj5bVJCY4+cSg3XTOdVEOQ+VINxMJdCL5K4k/i2wa2/uEP5f6RI/X4X/2aiS+9xG7pJvaXKGsFzucslewuqbsNC+xjDY8gfXa1KK5TZ1j4fVZd8B8ngUxQmqOcPyjBcl20ogyO6nWtAlG4rN0BWNNUysCtBnF967ZdA7dO3fae3mN4fBp4HeVZUcQzrGoiHNDajjn0p8Q3XE96A2B4jv5RIM9TJx4rpVde0+LzLyKNDajvk1RXIOmrVpcrl26yjk/3EYXWgknDU4+luOO+FI0NLpdyAI5bfOlDS6Pln88nOfl3g7n0glkYj6pRqiEQ7wU7Q73kzfh2WRm/+upy7123c9lFl+oVN93E37Nt7J5qZEdfWMtWCoCGLs3wxReAFRFWUJe03KfuAUq+MGywz8937UQEWucaWluD7Jf2SrZLNifkgwwX33euMxuUSqiJEQdfiIgDrhjK9WZqKniF+xJwX9M9qlG9pRz7EoNalwkj5XNUxYHn8bzGCIbQ6yJ4FhKdXZzUWWT4uHF4Rx8+3z5bMBD6PpJKkT73TNp33wd/bhs2GiWtPk0RmDYjwrQvI4wbWHBljfvwAlWdry7bKlxyZQt+UYhHFd/Ccb5hBYQjPJ/ZARDvvLeRlVYsMPHINrSr+hoBEEvPQ2YLvMTlatlFkg1N/Oq0U2XLCVvqJZdexvXPP899kQjbxFNsbWFD302ZoTi/WTifc5Fehi702j9KyYeBAyzHH9fqWER4kiLk8xIUQTJ0dgkdHV5QJEloa/fo7BKsdcDs6BA6uwxdGUMmI2SzLiEiTNGqTtPygxo3vu+YTpgfWJ38UPsUlbLPajuIRiMkEj1PC9bro4qQy+YoFouIGHxViok4p+29D9+Lp8l/b0uio0fNkwvCgoAQnFj2fSKrrCTpM0/TjiOOoRSJMAhhaU/5x1zDK6/GGbdGoc9WpVXwkvD0X1NMmhwnnVQ6LGyvwo5qSABn+R7Hez4FhXTScvHlA1hnzRzrbpLH7yo74CkD0U6FzK6Y2FGqsdNQGSwbbr65/GWD9bjvrnv0hpv+xB2T3+SBSJS1Eik2Rljfh9UC7mtwgCxBv8xKwZWH62gzNFpbLu8jAvGkEk8pLYMD95Ip1ipnIVVbC4H275dcmlWhKBTyjovmAzDmC8G2vJALtruqXgFQS1VqEiEES1grpAeewief5vjLLTf1+TGNMXR2drLFhAlst/12lIIywEOHDmGnXXYRCAp5qM43WrFgIIRAP1Tiu+8ipclvaddlV9LY3MyqannCV55/Icne+3b0KVqiBADKwD0PNGBLgp9QmtTFpaO44u0TVDjeGs4yloQHmS7hzPMHcfufviTVoGipjiOG2cD5K5DSk0j8t+qbvSQST7LnfvvJtjv8UO+76z7uvutuXpz0Bs+pMiSZZEUvytoqrKvC6kGmS7/0WgmSRoM3quoSSEEqY4TCB68+LBCD1elYZXAGMwB4KUiEymCoN3wtOg/4hRx68MGaz+eJ9zJJYu19unnqlll2Wc4+9xyWWXbZ2vldVFFr3XofALDgIITym0md8kspfviR6l//zhotDTQlCrz4SoKP3ouy3PhilRXbCwUm5bTPI7z5dpxEXMkobKXCqipkgxvtBPa2hndEucsqTWnlP68muPGWJo46pq0H0R/ARwzYdyH7E7zIn1Wjx2DND6VpwGA5cOKh7HfQgfzz6Wf0sUcf5dnn/8V/W+fwllHuUFjawGeiLN+ffgm4TXODhSaI+KF1puXfa3wj9T4SH6wvFH2nX/pBSn6p5NZLRSiWqsam+EKpWOF2xVIlMbVUqiSqhgmthYKhWPTxbTPxxhgvv3yQPvG3R0g3NM47WRFABPE8fN/H931O/tWvmTVzpq6x5pqcc955Eo1FXYJrD66Y3uhrglDAWiQapfGS88l8NpXV//su4wbEeXO68Ofbmjj97NnzPY0qSASmfBahba7B85yCvIW6uUbacRaY4kTj0b7H616JTyyk4pYbbm5mh20zLL18T4BXKlwRKP4NLfwNL7q9kj4Q+L589tlX2tHZwcjRo1l+zBhaW1vJqasw8a5oWFSiT6QqeB7MaTOcccUAxFOKBWfmCs74ckAIMp6rsp0LdRnPxWJtxnM5PT8AZDjWxFVtrVRwdQO9pJyiXy4NXPUNhEIZew6RqEeysZG2HiZUqiERKBSwmQyJZJLp06czZcoUfN/nuBNPIJ6IY0MO2A/6eiCESpLD0KESv/wiHbXXAWzbMYd30hEefDjNj3frYOW1CthM79xQg6SYzz6PkssLyZTSYGHloCpWteFXAIYDR1uPk8QnEoMZMyLccHMTZ541ex5y07lkfPXwkj4UH+Wph57gvoc31uef/YrpX00jK4ZkMsEQL8rKARcegcfV/XDRABhPKbQZPrxsoKvX08t+oWvIAzxxOlTomglBW535XJMBHe5HZSBTeQA7TiWu74ua1XIZrmYH2tJ8lA4RKBSR5ZanYYvNePPVV3nnnXcwxrDHnnuw/Q7OGd3fYRCwMEAIZUMltubqohefp9sdeiT3SYlPW6NccMkA/nTdjHI+7Lw+ks4uV0nAEkQTgkzk6kM8XKbHNipMUOFxq6QSlgcebuCAn7Sz/EpFbLY74EOu4DX6vPdGjEuuGMQTTyboyr2HpiIMbG5hA3WGyTolWAahGWgTw/XaO5DqKQzZDRU4J+nmUgkt7Z72hfmdu+Ky6UY1lu/XpfnxekFLPo2nnQZbT5A9d/2RZrNZhgwZwmFHHAlQrkHdX1p4qaaBI5vtfiCrnXkae2RKRNI+z/wzzR+uaoFKMYdeKRGvfNVhOKinlxd66H9qDS2BKJ89x+Ou+xp7fCJVcWMrEnD3rQ3sc9BwHnokST6iDGpM8hOiXFUULi0KB1thlSASkQHmohTmm15aSxLce5e6Sqe9ta6gzWufjHV1DrM9NXovy7ZQmzFkM12Utvs+bD1BrvjDH/SFF15ARNj/wANZaeWVXLb0AubsLTwQAuXBUAftJ/ufcDxrdmTwE3DlNQP46wNpvGanRPd0GBZGjSwRiytiXU7ajCAVqP5DN7jOWV2FLayQUVc+48FH08yYEsHEKvq1tYJ4buWC8wZy4q+HMHuOR6TJZwsrXFkUzvQN6wfzprThXm4QkXbDhWUBwo/hsy3pTQTxfUinGXDScXz0xVS96brrUWCFFVbggIMOdM/5NZJGFzoIAzwx9BfHy6mHHEpTVwc5azj51MG8+EyCSJNSnx8qgQxbemyRxkYnjzPictJ6AiFUuOFeamhS8GLKtGkRXngx4UqNKG4oqKdgB3Pyqctz6RVNROOKiSmHFD0u8z3WVyED5Vhy9UwPoQ7aj6BPmfqcPra4kzFoV4bkj3eDVVaSC087nekzZ2KM4fCjjmTw4MHi+36/jZGaSyzE23UkgrEui2KDc86UE/b+CZqdy9zOKEcdN5R/P5PAc+HmWm9AEUYtVWLF5Yvk80JM4Clx1VJ7KlwecsPVVFhbhRyK+sKjj6chC0YCPhYZz2/PWJebbrGkG91ZflE0nBhU6e+kNiGznqqmEex7F7Do06a+ERJBCwXsoIE0nHAM9zz4oD7+2GOICN//wQ/YfY89FtgYqaaFD0IAY5BAATz4wgvksF33oJiby+y5MSYePYzH7nOiOfDwVGoxNcGPdu7EBpbiBwJ/M5YkPXMVi9tvWxVEhXjc8uqkOJ99FkeiPpJeh4sv3YIb/vwejU0lSir8smQ4QA1dVERuTxRargX6GbarurfqfML+pEX1N7+wv60v13NRPoFMlqHHHc0X8RgXnXEmJWsZOGgQJ/3yFxhjFsglU08LxzrugcQY5zWPRjn5sktlbqGgtz76ECItHHPSED6fGuHQn7VhouCHvr0cbPf9Lv54YzMffRzFSyjXq2VjhNFIbWVYKiDZ0AojDUyPQOucKG+/k2fMyitz960/4vIrb6YhVSSjUY72hZ9UVRCbX9cJLmy3ICAESKuzsPNVx/d2nnm5cea3z7xIelmuX6+/jh9ERQrLjOXTddfk9JN+wRfTpmGt5WeHHsr4lVYS3/fx+uGU7o0WGQjBAdFai0nEOf/KK8SzVm9+7BFSDc2ced4g3v5vjJNPmsOwZXy0E0p5oWmY5edHzOXoE4eQVJhq4DwsFwVzFVcDQnDicijCyip87oGfyzPp7dVYefVjOPPs6xA6yJgku5SUidaUp6PtC6gEyAfO6r5SqKvmgZuNpYWgiLpCRMIcQO21oKpXTs+SclSuPiew+vl78x7UB2NCblcKhnkWxX3AbtJzIU9lIH5GXIBgTgy+Kmb4cuJEOubOpeT7rL3OOhx8yCELRQyHtEhBCJRZtkklOffqq2TAkUavfOQhYi1N3HNfI29MjnPiMa3suFMXEaP4nbDLjp0882ySO+9tZECT5SlVfm8sv7Gm3FFh51tclvF6KvxdlWi0xL9eGMXLLz9C65xP8NINrOpbTrKRstHU164TKpZyf100OeByY/FFA2BJGWzVYKpv0DvI5sXVqqkn7qk9LNuq5epjrICK8wvaWTMwpRJiDEsvswxnnXM2qXRqgX2CPdEiByEEQPQdEH9x9VUyyovoOQ/cT2lAI59NiXL08UN5+h+dHP6zNlZYzc0K/ttfzuH9D2K8+VaMpgbLbVgageOsIU9tImoRWEeFFmvJJBO889+3sNYST6Ux1nKi9RiCM0L6HH6jIo77a+Uq7sPYDaGkQivQSWVi8DyOE4X6WL3DufojC6kepH0V772BsPq/BBVV3XmFuLXEszmaBg9h6CojWXqZZVhhxRXYedddGTNmjCxMAMI3BEIA4zkdkUScfa6+QpZPJPXsO27nlZYGkla5655G/vFckr336ODHu3cwdpUS1185gx8fMJyPPo7R1GT5IxYPONqacnV8Q1BBVoXRKkxGSXoeUS9CuyoHW8PGQbWwBZnUpjrzuq/HhAbTSXmPkSp0iJIX6BIn6jpRukw4TldpF8c5EcihZKTKUSxanq0+FJ+1RkVQq7AuCbU60zqiEEWIBfeVAFIKDQgtxpDIFynl86RUGagwMBJh6IQJjDr7dAaNGS3JYFZOWPCoyLzoGwMhBA5Na7HRKOtffqnckG7Qq6+/ntuaUhSalY52wyWXD+C+hxrYabsu9t27ndtums5Rxw/ltTfiJJPK1cEgmmMCIIZcqglYU4XXg1mncihjcOn5C+LnCylH/zkhuGEOhUE+qhAvCSlfGGRBfJCgOphYKctFKScZBOU61LVqwBW1qnYMUFKhpAWSSUskWjuxYb0+We+GsoD1PGZ3dtIyahSj11wDXWoEstRwWGEcbLaJkHRTe6lqGXwLG4DwDYMQAGOcH9EYBp9/lpzS3KybXPIHrk9GeS4qxJt9Zs6IcMU1Ldx+dyM7btfJrjt2Eokok96MkzBwrbH4uIkQw3opAmyswp1U3CMHBBNqd9B/LhhSONFiv8gXTJOl+cqZNA4vUewy4AsUQUuuKDklt0wpKFAeLvtgfMH47jzYALSB7yQs4aFqEDqINq3MP55cgWeeeYlo1HPVv6iMgCugZSOkwl0hbzy+bJ/Dqhusz1mXXQrLLy/V+rKCy5AK6g4uDCu4N/rmQQhlIKox6MknyYSWZl3tzPN41FfujkeYFC0RjUMmI9x4czONTZaRI0pEouCXICFuWGERODFIes0Cq6owSoX3RVlbYcdgts4F+XZDh3NuQQ7EVbnSoSVYvkSkQO3MC/NT6OZD1rqhEMhy3HLnepz9zuvMiVg8I72mA4aXMiIYgc72uey0445cdPFFDB4wQKzv44Vh17Dg5TdU3f7bASE4h3YwsEaPOFSaBg/WvX55Clt3dvF4Os4jpRKTPCXW4qMl4ZMpUSLRSoJDCjfKPwf8yrq6xy24GUnfBg6xHoP4elwQ3PRg/dEJURCj5PNC51wPCiU0I5XJqudzbJl6vKDg+4qXhEL7Gpx94crceOM/iUY6GRCLzzcj2hiD7/vk83mOPfwwTjntNPEiEepLtX3T9O2BEAgTHsRa4nv+SHLDh2rDz09k38+nskNDA6+WSvxdLA8YV2m+PAoN947SwG3G0oXyG+sxEscNO4Atg5jwN/MtV0hxafnFotDRKa6Hw3T8r3PeYIiA1wJTP1qfX582mCeefD4Ykx3Hnw8APc8jk82STCY547TTOPCnBwkEhsa3CED45t9RdwrZvu+T2HxTabjjZjJrrk60rZ3vmQhnaYR9rCGjta6J0M/VANxvlFM9nxm4MnUnWFPOxP56AaUFf6RiSWjvMCDzz5ifH1kriCheU5R/PrEeex8Y4ckn36C5yUPVmycHDPW5jo4ORo0axbXXX8eBPz1INChsvigMjf7St38HIYUj+MavKC133UJ0p+1pa2ujCPwyAGJP4TaLs4z/JsrBns9XoqylQn4h3JKyYOUVRZzuGoLw65DvCyahICmuvGwVfnZElimfTqGpKR5kI/UOwBBgbW1tbDlhArfffRdbTpggYZm7rxvzXVi0+IAQykA0gwZJ043XSMMxR+Lncli/xK8lwt5WegViGpgkymGez43GEoc+F0HqjSzO4FkQ8q3Q0bHg3VueEKhJmfZZAxOPHsPZ53Xg+20kEjF8f/7it1AoUCgUOOroo7npzzfL2LFjy/HexQWAsLiBECoZ2hGP9OmnSOOF52ITCchk+Y3E2DvgiNAdiCmcIXKWsZxifL7CFRoqZ4X0g0LreEE4qgiohfZ2s0A6gW8J5o+GJx9tYu8Dh/LQozkaG0sYEwmGj/Z27Yr4HThoIJdcdimnnHaqxONuENKidLUsKC1+IATKA1KskjjgJ9J8640wbnm0rZ1TJMoB6pWTUOuBGMFVrrrbKBM9n2dEaWDB5nX0oecZTPtACnR0mfLwzz4do0FKW9pVjT3vrIFMPHoQn3xqcZMnyDz1P2MMqkpbWxubbrYZt995Jz/afXex1i42+l9PtHjeFQQGi0s0jG68gbTcdzuRnbfHtrXzK184jEg5rlv9EKHB0gS8J8qxns+FgSsnnI20L1wxDL+FnLDftoU6g6KvZK3zJXpN8PqLcfY9ZDiXXdWCiBKW9ZsXeZ5HLpfDWssxxx7LLX+5VVYcP178YOzH4iR+62nxBWFIoZ44fJg033StJH5zEiVVjs0UOEGi5ehI/YP4OI7oA1cZyxGez39EaaJcl6FXCgFncZNcLtDrEyj0Ifsh5H4mBaWicOUlLex7yHD+/VKCpiZbTvztjcJQWltbG8ssuyzXXncdvz7lNxJPJBZb8VtPiz8IoaInGkP6pOOk4fqrKI4ezSGtnZxKlJg4a7i+u0Mu2Qj8R5QjPZ8/GEsexxXnpSsKDsDhFBD9JRFo6zCuLE4vJ/D9Cvd767UYB04cxlnnDySbFRrS2n0IRB2Fxkc2m+XHe+3FHXffxTY/+P5iL37racm4S6jSEy3xH35fmh+4g+LO27NXWxe/L8Jg4/WYKROK5zROv7s04Ir/FiUN5UTZeqqAsH/DPYHy3Mbt7abHksk2tHwbIZ8TLr+ohb0PGsHTzyZparKEMyz03hWO+7W3tTFs+HAuuuRiLrvichkxYsQSIX7rackBIdQ4tr3Ro6T5T38U/8zfsk00wRXtOVbyIrRLJXG0mqq54ssBVzzPWFqh1zLC1ckR/SVjlPYOQylI4QlLcfg+mKizfP/9TIKfHDycc34/kK4uobGhj9wvnyeTybDbHrtz1z33sOdee0mY6bIkiN96WrJAGFIgnkWEhqMOE267ibXWXJMrZ3fwAyt0GFPONawmxQErhQPXdcYy0fN5RCxRKjpk6FWpBmF/DRNj3LzGhbxzWIcDurxmmDXd44xTB3LgxOH8+z+JCvebh/ERcre2tjaGjxjBhRdfzBVXXy1jlx5bHnK5pIjfeloy7xoq4tn3SWy0gUTuu02WPvJwfl8UDu3K43seBek5eSHkik24gkcnepZfeD7vBIZLhEo62ILkIoalkruyQibrjvbSbvvdtzSw5/4juOq6FnwL6dS8uV/o98vlcuTzefbae2/uuvce9tpn7yWa+1XTt5vA8HVJpBLua2pCzz5NWjbbWH915nmMe+ctLm5JM90IDcE46G4jynBZxgo8LMpLns+e1rCXNYwBZrPg04IZgWzGOMs2DS8+neDq65p56p8pjIHmZluuotXrOYLxOW1z57LyKqtw7PHHs9MuOwvA4hj5WFBaskEYkue5bBxVottuI2bdtXSf31/GuD/fynma59/pJGlrMard9L5wvQE3wuxyY3lKlJ9awxoq/fcPBiTiagW+9kacl65PcusdjXR1GRoa3BXnJXrDRNKuri7S6TRHHH00Rxx5JIOHDC4nHizp3K+avhsgBMp103wfb/BgseefyfpbbKpXn38Rl09+g9ua0hQ9Q8K3PVrD4UD4JuB9UX7t+aypQlZMr6VIeiNXIVfJF4QTTh7CnDkeqZSlscHO0+oN9bp8Pk+hUGCzzTfjmOOOY+NNNvnOcb9q+u6AMKTAaDGAbvcDGbbh+nr6pVey5s03c2lHJx81pmkM/Gj1wApFdDJYfl2UBAueFOv7LqWrsdE69XUeAPQ8j1KpRHt7O8uPW55DJx7GPvv+RKLRaLnKwXeJ+1XTkmuYzIvcRCGI76MDB4g54xTZ/S9/5qaNNmXnuR1kSyWKnofXi8kR6o9J6MYFQ3FY3ap+7HYuz1Sqp/Z8q87qbW9vJxaLccRRR3H3vfdxwEEHSjQaZUn0+/WXvnucsJo8DwkcdHbTjWTcerdy+fV/0g2u/SNXfvEZXzQ10ChuKGpPGKmuVROCoCc3SMihjPG6ye15gQ8gk8ngeR7bbb89hx95BOuut15Z9BpjvrPcr5q+2yCEsq5ofB8bjxM9cqIc9INtdIPLruDiB+7jb4UuvIY0cQu+dpeXigNgqVSiUChQLBShLp7sW0tjYyO5XG6+/pyQq2WzWUrFIhtstCE/mziR7bbfvpxuD/y/AF9I0p/JU5Z4CqY2UM9zc4M++YzefsUVXPGv5/k0FqUxkUCsxdb1iQ1ANmLEiB5TqRTwgiSCGdOn91gwMuR8uVyOQj7PqquvxoEH/ZTd99hdEskki1O6/TdN/79AGJK1WBGMCOTzfHLLbXrZjTfw4HvvUkqnSQXGQHXfWGspFuftNfQ8j0ikIlxCa9daSzabxfd9Vl5lFXbbY3f22ntvBg4cWGP1/n+l/58gDEh9H+t5Tu+bPkMfu/EmrrjtNl6b/iWJdJpYJFIGY+i7m+f5qrhZOOFMLpcjHouz3gbrs9POO7HDTjvJgAEDAP5fGB19of/XIASc0WIt4jlbuePd9/RP19/ATQ88wLS5rTQ0NOB5XjfOWE9iBCMVrlcqlRg+fDhbbf09ttt+e7acMEFCLvk/8NXS/0AYkip+VRz2g1de1WtvvJEH/vrXcuQiBGNIIXe01pYdzMlkkrXWWovvb7stW2+zNcuPG1dG2v/A1zP9D4R1pEGc2QsMhOefe05vvulPPP3UU3R2dBCLx4nFYqhq2VqOxWMsP24cm2++OVtuNYFNNt1UYrEYANUJpv8DX8/0PxD2QmGUIgTOv194QZ/4+xP86/nn+WzKFDzPY+lllmb9DTZgvfXWZ6ONN5aWAS3l45f09Kpvkv4HwvlQPRjb29v579vvaCweY/z48ZJMpWr2BfpkxPyPKvR/Ac7nH96B5/QAAAAASUVORK5CYII=" alt="Giáo Lý logo" class="crest-img">
+      </div>
+      <div class="hero-text">
+        <div class="eyebrow">Vietnamese Martyrs Parish · Giáo Lý Program</div>
+        <h1 class="serif">Forming Minds &amp;<br>Hearts To Serve</h1>
+        <p class="sub">A Growth Path for Passing on Our Faith</p>
+      </div>
+      <div class="crest" aria-hidden="true">
+        <img src="data:image/png;base64,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" alt="Vietnamese Martyrs Parish crest" class="crest-img">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="path-section">
+  <div class="wrap">
+    <!-- Desktop wavy path -->
+    <div class="path-desktop">
+      <div class="path-svg-wrap" style="height:160px;">
+        <svg viewBox="0 0 1000 200" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <path d="M100,80 C170,32 300,32 370,80 C443.3,91.7 485.0,150.0 540,150 C595.0,150.0 673.3,91.7 700,80"
+                fill="none" stroke="var(--sage)" stroke-width="2.5" stroke-linecap="round"/>
+          <ellipse cx="235" cy="40" rx="10" ry="4.5" fill="var(--sage)" opacity="0.65" transform="rotate(-8 235 40)"/>
+          <ellipse cx="470" cy="115" rx="10" ry="4.5" fill="var(--sage)" opacity="0.65" transform="rotate(35 470 115)"/>
+          <ellipse cx="615" cy="118" rx="9" ry="4" fill="var(--sage)" opacity="0.6" transform="rotate(-35 615 118)"/>
+        </svg>
+        <div id="pathNodesDesktop"></div>
+      </div>
+    </div>
+
+    <!-- Mobile stacked list -->
+    <div class="path-mobile" id="pathNodesMobile"></div>
+  </div>
+</div>
+
+<div class="stage-wrap">
+  <div class="wrap">
+    <div class="stage-card">
+      <div class="stage-head">
+        <div>
+          <div class="stage-eyebrow" id="stageEyebrow">Stage One</div>
+          <h2 class="stage-title serif" id="stageTitle">Assistant Catechist</h2>
+          <p class="stage-tenure" id="stageTenure">New volunteer — up to 2 years of service</p>
+        </div>
+        <div class="stage-cta" id="stageCta">LEARN TO SERVE AND SUPPORT</div>
+      </div>
+
+      <div class="tabs" id="tabBar"></div>
+      <div id="tabPanels"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>THE CATECHIST'S PATH — GIÁO LÝ CATECHIST FORMATION FRAMEWORK &amp; 2026 ROSTER</p>
+  </div>
+</footer>
+
+<div class="modal-overlay" id="personModalOverlay">
+  <div class="modal-box" id="personModalBox" role="dialog" aria-modal="true">
+    <button class="modal-close" id="personModalClose" aria-label="Close">×</button>
+    <div id="personModalContent"></div>
+  </div>
+</div>
+
+<button id="coordinatorLoginBtn" class="coord-login-btn" type="button">Coordinator Login</button>
+
+<div class="modal-overlay" id="authModalOverlay">
+  <div class="modal-box" id="authModalBox" role="dialog" aria-modal="true">
+    <button class="modal-close" id="authModalClose" aria-label="Close">×</button>
+    <div id="authModalContent"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://lrrmasbimmzfgkbqvsae.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_MvfKhtjQbC02X2DsOt5Fow_HFqAP1Sw';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const ROLE_SLUGS = {
+  'Assistant Catechist': 'assistant_catechist',
+  'Catechist': 'catechist',
+  'Class Coordinator': 'class_coordinator',
+  'Program Coordinator': 'program_coordinator',
+  'Catechist Mentor': 'catechist_mentor',
+  'Administrative Volunteer': 'administrative_volunteer',
+};
+
+let currentCoordinator = null; // { id, email } once signed in as a Class Coordinator
+
+function updateLoginButton(){
+  const btn = document.getElementById('coordinatorLoginBtn');
+  if(!btn) return;
+  if(currentCoordinator){
+    btn.textContent = 'Coordinator: ' + currentCoordinator.email + ' (Log out)';
+    btn.classList.add('is-logged-in');
+  } else {
+    btn.textContent = 'Coordinator Login';
+    btn.classList.remove('is-logged-in');
+  }
+}
+
+async function refreshAuthState(){
+  const { data } = await supabaseClient.auth.getSession();
+  const session = data && data.session;
+  currentCoordinator = session ? { id: session.user.id, email: session.user.email } : null;
+  updateLoginButton();
+}
+
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+  currentCoordinator = session ? { id: session.user.id, email: session.user.email } : null;
+  updateLoginButton();
+});
+
+function openAuthModal(mode){
+  renderAuthModal(mode || 'signin');
+  document.getElementById('authModalOverlay').classList.add('open');
+}
+function closeAuthModal(){
+  document.getElementById('authModalOverlay').classList.remove('open');
+}
+
+function renderAuthModal(mode, message){
+  const content = document.getElementById('authModalContent');
+  const isSignup = mode === 'signup';
+  content.innerHTML = `
+    <div class="modal-eyebrow">Class Coordinators Only</div>
+    <h3 class="modal-name serif">${isSignup ? 'Create Coordinator Account' : 'Coordinator Log In'}</h3>
+    <p class="edit-note">${isSignup
+      ? 'Sign-up only succeeds if this email matches a Class Coordinator on the roster.'
+      : 'Log in with the email and password you used to create your coordinator account.'}</p>
+    <div class="edit-password-box">
+      <div class="edit-add-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+        <input type="email" id="authEmailInput" placeholder="Email" class="roster-search" autocomplete="email">
+        <input type="password" id="authPasswordInput" placeholder="Password" class="roster-search" autocomplete="${isSignup ? 'new-password' : 'current-password'}">
+      </div>
+      ${message ? `<p class="edit-error">${escapeHtml(message)}</p>` : ''}
+      <div class="edit-password-row" style="margin-top:12px;">
+        <button class="edit-btn edit-btn-primary" id="authSubmitBtn">${isSignup ? 'Create Account' : 'Log In'}</button>
+        <button class="edit-btn" id="authCancelBtn">Cancel</button>
+      </div>
+      <p class="edit-note" style="margin-top:10px;">
+        ${isSignup
+          ? `Already have an account? <a href="#" id="authSwitchLink">Log in</a>`
+          : `New coordinator? <a href="#" id="authSwitchLink">Create an account</a>`}
+      </p>
+    </div>
+  `;
+
+  document.getElementById('authSwitchLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    renderAuthModal(isSignup ? 'signin' : 'signup');
+  });
+  document.getElementById('authCancelBtn').addEventListener('click', closeAuthModal);
+
+  const submitBtn = document.getElementById('authSubmitBtn');
+  const doSubmit = async () => {
+    const email = document.getElementById('authEmailInput').value.trim();
+    const password = document.getElementById('authPasswordInput').value;
+    if(!email || !password){
+      renderAuthModal(mode, 'Enter both an email and a password.');
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = isSignup ? 'Creating…' : 'Logging in…';
+    const { data, error } = isSignup
+      ? await supabaseClient.auth.signUp({ email, password })
+      : await supabaseClient.auth.signInWithPassword({ email, password });
+    if(error){
+      renderAuthModal(mode, isSignup
+        ? 'Sign-up failed: this email is not recognized as a Class Coordinator, or an account already exists.'
+        : 'Log in failed: ' + error.message);
+      return;
+    }
+    currentCoordinator = data.session ? { id: data.session.user.id, email: data.session.user.email } : null;
+    updateLoginButton();
+    closeAuthModal();
+    if(isSignup && !data.session){
+      alert('Account created. Check your email to confirm, then log in.');
+    }
+  };
+  submitBtn.addEventListener('click', doSubmit);
+  content.querySelectorAll('input').forEach(el => {
+    el.addEventListener('keydown', (e) => { if(e.key === 'Enter') doSubmit(); });
+  });
+}
+
+document.getElementById('coordinatorLoginBtn').addEventListener('click', async () => {
+  if(currentCoordinator){
+    if(confirm('Log out of coordinator account (' + currentCoordinator.email + ')?')){
+      await supabaseClient.auth.signOut();
+      currentCoordinator = null;
+      updateLoginButton();
+    }
+    return;
+  }
+  openAuthModal('signin');
+});
+document.getElementById('authModalClose').addEventListener('click', closeAuthModal);
+document.getElementById('authModalOverlay').addEventListener('click', (e) => {
+  if(e.target === document.getElementById('authModalOverlay')) closeAuthModal();
+});
+
+const PEOPLE = [{"num": 1, "first": "Monica", "middle": "N/A", "last": "Nguyen", "name": "Monica Nguyen", "birthDate": "2008-12-19", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 1", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 2, "first": "Emma Y-Nhi", "middle": "hoÃ ng", "last": "Nguyen", "name": "Emma Y-Nhi hoÃ ng Nguyen", "birthDate": "2009-06-11", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 2", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 3, "first": "Tyffani", "middle": "Thi", "last": "Dinh", "name": "Tyffani Thi Dinh", "birthDate": "2008-09-14", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 3", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 4, "first": "Audrey", "middle": "Nguyen", "last": "Phan", "name": "Audrey Nguyen Phan", "birthDate": "2009-06-22", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 4", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 5, "first": "Allison", "middle": "Danthanh", "last": "Van", "name": "Allison Danthanh Van", "birthDate": "2009-02-11", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 5", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 6, "first": "Austin", "middle": "Quoc", "last": "Dinh", "name": "Austin Quoc Dinh", "birthDate": "2009-04-18", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 6", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 7, "first": "Angela", "middle": "Thao", "last": "Luu", "name": "Angela Thao Luu", "birthDate": "2008-12-31", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 7", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 8, "first": "Marianne", "middle": "Catloi", "last": "Nguyen", "name": "Marianne Catloi Nguyen", "birthDate": "2008-11-26", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 8", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 9, "first": "Doan", "middle": "Minh", "last": "Pham", "name": "Doan Minh Pham", "birthDate": "2008-11-08", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 9", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 10, "first": "Susie", "middle": "Pham", "last": "Nguyen", "name": "Susie Pham Nguyen", "birthDate": "2008-10-25", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 10", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 11, "first": "Jessica", "middle": "An", "last": "Nguyen", "name": "Jessica An Nguyen", "birthDate": "2009-04-04", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 11", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 12, "first": "Tran", "middle": "Dang", "last": "Dang", "name": "Tran Dang Dang", "birthDate": "2006-11-06", "age": 19, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 1", "catecheticalTraining": ["Lesson Planning Delivery: Art of Catechesis", "Facilitating Small Groups and Faith Sharing", "Technology in Catechesis", "Child Development", "Positive Behavioral Intervention System", "Building community in the classroom", "The Art of Accompaniment", "Planning and Co-Teaching with Other Catechists", "Conflicts in Ministry"], "safeEnvironment": "No"}, {"num": 13, "first": "Conan", "middle": "Minh", "last": "Pham", "name": "Conan Minh Pham", "birthDate": "2008-07-10", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 2", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 14, "first": "Tiffany", "middle": "Vi", "last": "Lu", "name": "Tiffany Vi Lu", "birthDate": "2009-03-30", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 3", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 15, "first": "Andy", "middle": "Vinh", "last": "Nguyen", "name": "Andy Vinh Nguyen", "birthDate": "2008-11-23", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 4", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 16, "first": "Luke", "middle": "Thien", "last": "Truong", "name": "Luke Thien Truong", "birthDate": "2009-05-18", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 5", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 17, "first": "Angela", "middle": "le", "last": "pham", "name": "Angela le pham", "birthDate": "2008-09-12", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 6", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 18, "first": "Lilyann", "middle": "Vu", "last": "Nguyen", "name": "Lilyann Vu Nguyen", "birthDate": "2009-09-14", "age": 16, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 7", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 19, "first": "Vivianna", "middle": "Dinh- thao", "last": "Phan", "name": "Vivianna Dinh- thao Phan", "birthDate": "2009-04-01", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 8", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 20, "first": "Mary-Rose", "middle": "T", "last": "Nguyen", "name": "Mary-Rose T Nguyen", "birthDate": "2008-10-14", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 9", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 21, "first": "Tina", "middle": "N/A", "last": "Luong", "name": "Tina Luong", "birthDate": "2009-01-11", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 10", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 22, "first": "Elena", "middle": "Diem Vy", "last": "Dao", "name": "Elena Diem Vy Dao", "birthDate": "2008-11-22", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 11", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 23, "first": "Dante", "middle": "TD", "last": "Pham", "name": "Dante TD Pham", "birthDate": "2009-03-31", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 1", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 24, "first": "Helen", "middle": "Han", "last": "Tran", "name": "Helen Han Tran", "birthDate": "2007-10-23", "age": 18, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 2", "catecheticalTraining": ["Co-Teaching", "Leading prayer and teaching assigned portions of the lesson", "Redirecting behavior respectfully", "Supporting transitions and routines", "Building relationship with the students", "Sharing responsibility and supporting fellow catechists"], "safeEnvironment": "No"}, {"num": 25, "first": "Long", "middle": "Khang", "last": "Vo", "name": "Long Khang Vo", "birthDate": "2008-10-09", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 3", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 26, "first": "Jasmine", "middle": "Bao", "last": "Tran", "name": "Jasmine Bao Tran", "birthDate": "2009-04-13", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 4", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 27, "first": "Sydney", "middle": "N/A", "last": "Nguyen", "name": "Sydney Nguyen", "birthDate": "2009-08-23", "age": 16, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 5", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 28, "first": "Tran", "middle": "Bao", "last": "Dang", "name": "Tran Bao Dang", "birthDate": "2006-11-06", "age": 19, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 6", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 29, "first": "Vivianna", "middle": "Dinh Thao", "last": "Phan", "name": "Vivianna Dinh Thao Phan", "birthDate": "2009-04-01", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 7", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 30, "first": "Ryan", "middle": "David", "last": "Tran", "name": "Ryan David Tran", "birthDate": "2008-10-28", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 8", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 31, "first": "Ethan", "middle": "Tung Nhat", "last": "Tran", "name": "Ethan Tung Nhat Tran", "birthDate": "2009-05-16", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 9", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 32, "first": "Andrew", "middle": "tuong duy", "last": "tran", "name": "Andrew tuong duy tran", "birthDate": "2009-07-11", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 10", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 33, "first": "Devin", "middle": "Tan", "last": "Thach", "name": "Devin Tan Thach", "birthDate": "2007-09-26", "age": 18, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 11", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 34, "first": "Kaile", "middle": "H", "last": "Nguyen", "name": "Kaile H Nguyen", "birthDate": "2009-08-07", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 1", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 35, "first": "Phong", "middle": "Xuan", "last": "Nguyen", "name": "Phong Xuan Nguyen", "birthDate": "2007-01-27", "age": 19, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 2", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 36, "first": "Rosie", "middle": "Dau", "last": "Dau", "name": "Rosie Dau Dau", "birthDate": "1988-04-23", "age": 38, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Program Coordinator", "catecheticalTraining": ["Vision, Mission, and Strategic Planning", "Building Community in the GL Program", "Budgeting & Stewardship", "Operations & Administration", "Developing Future Leaders", "Appreciating and Recognizing Volunteers", "Policies and Safe Environment", "Program Evaluation and Continuous Improvement", "Event Planning & Execution", "Decision Making and Communal Discernment", "Vision of catechesis & evangelization", "Kerygmatic & Christ-centered catechesis", "Accompaniment & faith journey", "Family & community catechesis", "Catechist formation & accompaniment", "Catechesis in today's culture", "Difficult Conversations with Compassion"], "safeEnvironment": "No"}, {"num": 37, "first": "Grace", "middle": "Thi", "last": "Huynh", "name": "Grace Thi Huynh", "birthDate": "1986-03-01", "age": 40, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 4", "catecheticalTraining": ["Curriculum Planning & Implementation", "Sacramental Theology", "Supporting students with special needs", "Accompanying Catechists", "Fostering a Christ-Centered Classroom Culture", "Partnering with Parents", "Effective Team Building", "Difficult Conversations with Compassion", "Conflict Resolution", "Coaching and Mentoring Catechists", "Listening and Giving Feedback"], "safeEnvironment": "No"}, {"num": 38, "first": "Nathan", "middle": "Khang", "last": "Tran", "name": "Nathan Khang Tran", "birthDate": "2007-02-17", "age": 19, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 5", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 39, "first": "Isabella", "middle": "Ngo", "last": "Nguyen", "name": "Isabella Ngo Nguyen", "birthDate": "2008-05-21", "age": 18, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 6", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 40, "first": "Tracy", "middle": "Thi", "last": "Ngo", "name": "Tracy Thi Ngo", "birthDate": "2008-05-05", "age": 18, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 7", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 41, "first": "Tram-Anh", "middle": "Thi", "last": "Truong", "name": "Tram-Anh Thi Truong", "birthDate": "2008-05-27", "age": 18, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 8", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 42, "first": "Carolyn", "middle": "Duong", "last": "Vu", "name": "Carolyn Duong Vu", "birthDate": "2009-06-30", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 9", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 43, "first": "Kevin", "middle": "Nam", "last": "Hoang", "name": "Kevin Nam Hoang", "birthDate": "2005-06-21", "age": 21, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 10", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 44, "first": "Joanne", "middle": "Thu Hien", "last": "Nguyen", "name": "Joanne Thu Hien Nguyen", "birthDate": "2005-03-16", "age": 21, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 11", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 45, "first": "Daniel", "middle": "Duc", "last": "Tran", "name": "Daniel Duc Tran", "birthDate": "2006-06-11", "age": 20, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 1", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 46, "first": "Twix (Tina)", "middle": "Ngan", "last": "Nguyen", "name": "Twix (Tina) Ngan Nguyen", "birthDate": "2008-03-03", "age": 18, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 2", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 47, "first": "Sophia", "middle": "Thanh Van", "last": "Pham", "name": "Sophia Thanh Van Pham", "birthDate": "2008-08-26", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 3", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 48, "first": "Alex", "middle": "Huy", "last": "Tran", "name": "Alex Huy Tran", "birthDate": "2004-09-04", "age": 21, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 4", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 49, "first": "Joseph", "middle": "Quang", "last": "Nguyen", "name": "Joseph Quang Nguyen", "birthDate": "2006-10-05", "age": 19, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 5", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 50, "first": "Sonvi", "middle": "T", "last": "Ha", "name": "Sonvi T Ha", "birthDate": "2008-02-05", "age": 18, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 6", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 51, "first": "Atticus", "middle": "Tran Hai Dang", "last": "Phan", "name": "Atticus Tran Hai Dang Phan", "birthDate": "2006-09-12", "age": 19, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 7", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 52, "first": "Anthony", "middle": "Thanh", "last": "Le", "name": "Anthony Thanh Le", "birthDate": "2008-05-20", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 8", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 53, "first": "Jennifer", "middle": "Tuyet", "last": "Dang", "name": "Jennifer Tuyet Dang", "birthDate": "2006-09-15", "age": 19, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 9", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 54, "first": "Amy", "middle": "N/A", "last": "Dao", "name": "Amy Dao", "birthDate": "2006-12-31", "age": 19, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 10", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 55, "first": "Steven", "middle": "N/A", "last": "Tran", "name": "Steven Tran", "birthDate": "2007-11-16", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 11", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 56, "first": "Linh-An", "middle": "Tran", "last": "Tran", "name": "Linh-An Tran Tran", "birthDate": "2006-04-01", "age": 20, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 1", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 57, "first": "Andy", "middle": "Ly", "last": "Ly", "name": "Andy Ly Ly", "birthDate": "2005-01-11", "age": 21, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 2", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 58, "first": "Raymond", "middle": "t", "last": "Nguyen", "name": "Raymond t Nguyen", "birthDate": "2007-05-22", "age": 19, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 3", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 59, "first": "Mary-Rose", "middle": "T", "last": "Nguyen", "name": "Mary-Rose T Nguyen", "birthDate": "2008-10-14", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 4", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 60, "first": "Ha", "middle": "Ngoc", "last": "Nguyen", "name": "Ha Ngoc Nguyen", "birthDate": "2008-03-12", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 5", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 61, "first": "Arlena", "middle": "T", "last": "Le", "name": "Arlena T Le", "birthDate": "2009-03-31", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 6", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 62, "first": "Kenny", "middle": "N/A", "last": "Pham", "name": "Kenny Pham", "birthDate": "2007-05-09", "age": 19, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 7", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 63, "first": "Jacklyn", "middle": "N/A", "last": "Tran", "name": "Jacklyn Tran", "birthDate": "2006-05-24", "age": 20, "giaoLyRole": "Catechist", "roles": ["Catechist"], "class": "Lop 8", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 64, "first": "Kim", "middle": "Banh", "last": "Banh", "name": "Kim Banh Banh", "birthDate": "2007-08-01", "age": 19, "giaoLyRole": "Catechist", "roles": ["Catechist"], "class": "Lop 9", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 65, "first": "Hai-Dang", "middle": "Nguyen", "last": "Nguyen", "name": "Hai-Dang Nguyen Nguyen", "birthDate": "2008-03-20", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 10", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 66, "first": "Doan", "middle": "Minh", "last": "Pham", "name": "Doan Minh Pham", "birthDate": "2008-11-08", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 11", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 67, "first": "Lincoln", "middle": "Nguyen", "last": "Nguyen", "name": "Lincoln Nguyen Nguyen", "birthDate": "2008-04-01", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 1", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 68, "first": "Julianne", "middle": "N/A", "last": "Nguyen", "name": "Julianne Nguyen", "birthDate": "2008-05-30", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 2", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 69, "first": "Nhan", "middle": "Thanh", "last": "Nguyen", "name": "Nhan Thanh Nguyen", "birthDate": "2007-10-26", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 3", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 70, "first": "Nini", "middle": "N/A", "last": "Nguyen", "name": "Nini Nguyen", "birthDate": "2007-12-21", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 4", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 71, "first": "Britney", "middle": "Huynh Thi", "last": "Nguyen", "name": "Britney Huynh Thi Nguyen", "birthDate": "2007-11-14", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 5", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 72, "first": "kieralyn", "middle": "mai", "last": "lu", "name": "kieralyn mai lu", "birthDate": "2007-01-25", "age": 19, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 6", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 73, "first": "Ivy", "middle": "pham", "last": "Pham", "name": "Ivy pham Pham", "birthDate": "2007-03-13", "age": 19, "giaoLyRole": "Catechist", "roles": ["Catechist"], "class": "Lop 7", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 74, "first": "Christina", "middle": "Nguyen-An", "last": "Nguyen-An", "name": "Christina Nguyen-An Nguyen-An", "birthDate": "2004-10-25", "age": 21, "giaoLyRole": "Catechist", "roles": ["Catechist"], "class": "Lop 8", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 75, "first": "taylor", "middle": "pham", "last": "luong", "name": "taylor pham luong", "birthDate": "2006-12-21", "age": 19, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 9", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 76, "first": "Andy", "middle": "Dinh", "last": "Dinh", "name": "Andy Dinh Dinh", "birthDate": "2007-09-19", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 10", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 77, "first": "angel", "middle": "thien-ai", "last": "nguyen", "name": "angel thien-ai nguyen", "birthDate": "2009-07-23", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 11", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 78, "first": "Matt", "middle": "Dang", "last": "Dang", "name": "Matt Dang Dang", "birthDate": "1999-04-26", "age": 27, "giaoLyRole": "Catechist", "roles": ["Catechist"], "class": "Lop 1", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 79, "first": "Kim-Thu", "middle": "Dong", "last": "Nguyen", "name": "Kim-Thu Dong Nguyen", "birthDate": "2002-01-19", "age": 24, "giaoLyRole": "Catechist", "roles": ["Catechist"], "class": "Lop 2", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 80, "first": "Peter", "middle": "Duc", "last": "Ho", "name": "Peter Duc Ho", "birthDate": "2005-02-25", "age": 21, "giaoLyRole": "Catechist", "roles": ["Catechist"], "class": "Lop 3", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 81, "first": "Kevin", "middle": "N/A", "last": "Tran", "name": "Kevin Tran", "birthDate": "2006-06-23", "age": 20, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 4", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 82, "first": "Phu", "middle": "Thien", "last": "Doan", "name": "Phu Thien Doan", "birthDate": "2006-09-23", "age": 19, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 5", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 83, "first": "Henna", "middle": "Ngo", "last": "Ngo", "name": "Henna Ngo Ngo", "birthDate": "2007-11-09", "age": 18, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 6", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 84, "first": "Alysa", "middle": "N/A", "last": "Lam", "name": "Alysa Lam", "birthDate": "2007-06-15", "age": 19, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 7", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 85, "first": "Calista", "middle": "Mai Khoi", "last": "Phan", "name": "Calista Mai Khoi Phan", "birthDate": "2008-05-13", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 8", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 86, "first": "Austin", "middle": "Dinh", "last": "Dinh", "name": "Austin Dinh Dinh", "birthDate": "2009-04-18", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 9", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 87, "first": "Lena", "middle": "Doan", "last": "Huynh", "name": "Lena Doan Huynh", "birthDate": "2008-01-11", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 10", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 88, "first": "Lena", "middle": "Luu", "last": "Pham", "name": "Lena Luu Pham", "birthDate": "2003-02-13", "age": 23, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 11", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 89, "first": "Hoang", "middle": "Huy", "last": "Pham", "name": "Hoang Huy Pham", "birthDate": "1990-04-22", "age": 36, "giaoLyRole": "administrative-volunteer", "roles": ["Administrative Volunteer"], "class": "Lop 1", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 90, "first": "Joseph", "middle": "Thien An", "last": "Tran", "name": "Joseph Thien An Tran", "birthDate": "1997-07-06", "age": 29, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 2", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 91, "first": "Sunni", "middle": "Vu", "last": "Nguyen", "name": "Sunni Vu Nguyen", "birthDate": "2008-06-19", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 3", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 92, "first": "Sunni", "middle": "Vu", "last": "Nguyen", "name": "Sunni Vu Nguyen", "birthDate": "2008-06-19", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 4", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 93, "first": "Nathan", "middle": "Khang", "last": "Nguyen", "name": "Nathan Khang Nguyen", "birthDate": "2008-03-17", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 5", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 94, "first": "Patrick", "middle": "N/A", "last": "Nguyen", "name": "Patrick Nguyen", "birthDate": "2008-08-19", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 6", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 95, "first": "Loc", "middle": "Toan", "last": "Vu", "name": "Loc Toan Vu", "birthDate": "1992-06-06", "age": 34, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 7", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 96, "first": "Loc", "middle": "Vinh", "last": "Dao", "name": "Loc Vinh Dao", "birthDate": "1983-02-09", "age": 43, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 8", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 97, "first": "Dylan", "middle": "TriDuc", "last": "Dao", "name": "Dylan TriDuc Dao", "birthDate": "2008-03-14", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 9", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 98, "first": "Cong-Duy", "middle": "N/A", "last": "Luu", "name": "Cong-Duy Luu", "birthDate": "2004-11-30", "age": 21, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 10", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 99, "first": "Dzuy-An", "middle": "N/A", "last": "Tran", "name": "Dzuy-An Tran", "birthDate": "2009-09-19", "age": 16, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 11", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 100, "first": "Gia Han", "middle": "Ngoc", "last": "Nguyen", "name": "Gia Han Ngoc Nguyen", "birthDate": "2006-06-06", "age": 20, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 1", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 101, "first": "Tina", "middle": "Phuong Anh", "last": "Phung", "name": "Tina Phuong Anh Phung", "birthDate": "2008-05-22", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 2", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 102, "first": "Johnathan", "middle": "Minh thien", "last": "Nguyen", "name": "Johnathan Minh thien Nguyen", "birthDate": "2008-04-08", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 3", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 103, "first": "Trinity", "middle": "Nile", "last": "Ta", "name": "Trinity Nile Ta", "birthDate": "2001-12-16", "age": 24, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 4", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 104, "first": "Xuan-Anh", "middle": "Theresa", "last": "Ly", "name": "Xuan-Anh Theresa Ly", "birthDate": "2009-01-07", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 5", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 105, "first": "Lucas", "middle": "Van", "last": "Tran", "name": "Lucas Van Tran", "birthDate": "2009-02-12", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 6", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 106, "first": "Aaron", "middle": "Thanh", "last": "Le", "name": "Aaron Thanh Le", "birthDate": "2008-04-06", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 7", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 107, "first": "Hoang", "middle": "Lam", "last": "Nguyen", "name": "Hoang Lam Nguyen", "birthDate": "2009-06-11", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 8", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 108, "first": "Johnson", "middle": "N/A", "last": "Diep", "name": "Johnson Diep", "birthDate": "2000-05-25", "age": 26, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 9", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 109, "first": "Kendon", "middle": "Khang", "last": "Nguyen", "name": "Kendon Khang Nguyen", "birthDate": "2008-11-26", "age": 17, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 10", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 110, "first": "Aimee", "middle": "N/A", "last": "Ha", "name": "Aimee Ha", "birthDate": "2008-02-19", "age": 18, "giaoLyRole": "Assistant Catechist", "roles": ["Assistant Catechist"], "class": "Lop 11", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 111, "first": "Daniel", "middle": "N/A", "last": "Nguyen", "name": "Daniel Nguyen", "birthDate": "2005-10-11", "age": 20, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 1", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 112, "first": "Clinton", "middle": "Huy", "last": "Vu", "name": "Clinton Huy Vu", "birthDate": "2006-10-11", "age": 19, "giaoLyRole": "catechist-coordinator", "roles": ["Class Coordinator"], "class": "Lop 2", "catecheticalTraining": [], "safeEnvironment": "No"}, {"num": 113, "first": "Nhat", "middle": "Thanh", "last": "Tran", "name": "Nhat Thanh Tran", "birthDate": "1982-09-20", "age": 43, "giaoLyRole": "catechist", "roles": ["Catechist"], "class": "Lop 3", "catecheticalTraining": [], "safeEnvironment": "No"}];
+const FRAMEWORK = [{"role": "Assistant Catechist", "tenure": "New volunteer — up to 2 years", "learn": "Learn to serve and support", "responsibilities": ["Assist catechists with lesson planning and classroom activities", "Help create a welcoming, respectful classroom environment", "Lead assigned portions of lesson, prayer, or activities as requested", "Coach, encourage, and engage students in discussions and group work", "Build positive relationships by being present, attentive, and loving", "Participate in GL events and attend required formation, meetings, and training"], "being": {"retreat": "Spirituality 100 — Without God We Can Do Nothing", "habits": ["Building prayer life daily (5–10 min)", "Feet on the Ground", "Nightly examen", "Hallow daily prayer app"]}, "knowing": {"groups": [{"title": "Foundation of Catholic Faith — “What We Believe and Why It Matters?”", "items": ["God loves us", "Jesus saves us", "The Holy Spirit guides us", "The Church is our faith family", "We encounter Christ through Scripture, Prayer, and Sacraments", "We respond by following Jesus and loving others"]}, {"title": "Introduction to Scripture", "items": ["Books of the Bible", "How to use the Bible"]}]}, "serving": {"groups": [{"title": "Safe Environment (Ages 18+)", "items": ["Program structure, mission, goal, growth path"]}, {"title": "Teaching & Facilitation", "items": ["Co-Teaching", "Leading prayer and teaching assigned portions of the lesson"]}, {"title": "Classroom Management", "items": ["Redirecting behavior respectfully", "Supporting transitions and routines"]}, {"title": "Accompaniment & Relationship Building", "items": ["Building relationship with the students"]}, {"title": "Collaboration & Communication", "items": ["Sharing responsibility and supporting fellow catechists"]}]}, "short": "0–2 yrs", "stage": "One"}, {"role": "Catechist", "tenure": "2 years +", "learn": "Learn to teach and accompany", "responsibilities": ["Prepare lesson plans", "Delegate lesson components to assistant catechists and ensure they deliver well", "Teach and lead the class; handle classroom management", "Communicate with the class coordinator on successes, concerns, support needs", "Help coordinators build community among catechists, students, and families", "Participate in catechist formation, retreats, and required training"], "being": {"retreat": "Emmanuel — The Lord Be with You (or) Gospel of Matthew, 4PM (Christus)", "habits": ["Building prayer life including daily examen (15–20 min)", "Pray as You Go", "Hallow daily prayer app", "Formed app"]}, "knowing": {"groups": [{"title": "Class content catechism", "items": ["Scripture", "Creed", "Sacrament", "Liturgy", "Church", "Morality"]}, {"title": "Connecting living experience to catechism", "items": []}, {"title": "Choose at least one opportunity to grow in knowledge of the faith", "items": ["Start the Seattle Archdiocese Catechetical Certification Program", "LA Congress", "DHGL (National Vietnamese-American Catechetical Conferences, Houston, June 2027 / 2029)", "Archdiocese Seattle Youth Conference — Inspire: Youth Ministry Track", "SEEK", "Steubenville"]}]}, "serving": {"groups": [{"title": "Safe Environment (Ages 18+)", "items": []}, {"title": "Teaching & Facilitation", "items": ["Lesson Planning Delivery: Art of Catechesis", "Facilitating Small Groups and Faith Sharing", "Technology in Catechesis"]}, {"title": "Classroom Management", "items": ["Child Development", "Positive Behavioral Intervention System"]}, {"title": "Accompaniment & Relationship Building", "items": ["Building community in the classroom", "The Art of Accompaniment"]}, {"title": "Collaboration & Communication", "items": ["Planning and Co-Teaching with Other Catechists", "Conflicts in Ministry"]}]}, "short": "2 yrs +", "stage": "Two"}, {"role": "Class Coordinator", "tenure": "BPV invite — must be Coordinator to be elected to BPV", "learn": "Learn to lead and develop others", "responsibilities": ["Serve as primary liaison between catechists and the BPV", "Communicate program updates, schedules, and expectations", "Walk together with BPV to lead the program", "Oversee the catechetical program for the assigned grade level", "Plan yearly curriculum & schedule; ensure faithful, consistent teaching", "Support classroom management and escalate to BPV when needed", "Coordinate sacramental preparation", "Mentor and support catechists; provide resources and constructive feedback", "Encourage catechists to participate in GL events, training, and spiritual growth", "Model joyful discipleship and servant leadership", "Build community among catechists, students, and families", "Organize meetings, team bonding, and integrate parent helpers", "Participate in catechist formation, retreats, and required training"], "being": {"retreat": "Service — The Spirit of God Is Upon Me (or) Gospel of Luke, 4PM (Christus)", "habits": ["Building prayer life including daily examen (15–20 min)", "Pray as You Go", "Hallow daily prayer app", "Formed app", "Servant Leadership (Christus)"]}, "knowing": {"groups": [{"title": "Connecting and facilitating living experience to catechism", "items": []}, {"title": "Deeper knowledge of class content to plan curriculum and ensure faithful teaching", "items": ["Additional readings, videos, research"]}, {"title": "Pursuing the Seattle Archdiocese Catechetical Certification Program", "items": ["LA Congress", "DHGL (National Vietnamese-American Catechetical Conferences, Houston, June 2027 / 2029)", "Archdiocese Seattle Youth Conference — Inspire: Youth Ministry Track", "SEEK", "Steubenville"]}]}, "serving": {"groups": [{"title": "Teaching & Facilitation", "items": ["Curriculum Planning & Implementation", "Sacramental Theology (if overseeing sacramental programs)"]}, {"title": "Classroom Management", "items": ["Supporting students with special needs"]}, {"title": "Accompaniment & Relationship Building", "items": ["Accompanying Catechists", "Fostering a Christ-Centered Classroom Culture", "Partnering with Parents"]}, {"title": "Communication and Coordination", "items": ["Effective Team Building", "Difficult Conversations with Compassion", "Conflict Resolution", "Coaching and Mentoring Catechists", "Listening and Giving Feedback"]}]}, "short": "BPV invite", "stage": "Three"}, {"role": "Program Coordinator", "tenure": "Elected BPV — 3–4+ years of experience suggested", "learn": "Learn to lead the catechetical ministry", "responsibilities": ["Provide leadership, vision, and direction for the catechetical ministry", "Ensure mission and goals are fulfilled", "Plan the annual calendar, curriculum, and program schedule", "Recruit, support, and develop coordinators and catechists", "Coordinate registration, class assignments, and GL events", "Communicate program updates, policies, and expectations", "Cultivate a Christ-centered culture of belonging and faith accompaniment", "Serve as the escalation point for program-related issues", "Serve as primary liaison between parish leadership, TNTT and VN program coordinators, catechists, and families", "Coordinate GL involvement in parish life", "Communicate with parish leaders on successes, concerns, and support needs", "Plan and oversee catechist formation; work with formation team on training, retreats, certification", "Build a Christ-centered culture and support ongoing spiritual growth of catechists", "Mentor class coordinators and future ministry leaders", "Model servant leadership rooted in prayer and discipleship"], "being": {"retreat": "New Creation — In the Beginning Was the Word / Gospel of John / Caritas (Christus) (or) Silent Retreat (Christus)", "habits": ["Building prayer life including daily examen (15–20 min)", "Pray as You Go", "Hallow daily prayer app", "Servant Leadership (Christus)"]}, "knowing": {"groups": [{"title": "Complete the Seattle Archdiocese Catechetical Certification Program", "items": []}, {"title": "Organize opportunities for catechists to grow in knowledge of the faith", "items": ["LA Congress", "DHGL (National Vietnamese-American Catechetical Conferences, Houston, June 2027 / 2029)", "Archdiocese Seattle Youth Conference — Inspire: Youth Ministry Track", "SEEK", "Steubenville"]}]}, "serving": {"groups": [{"title": "Comprehensive Catechetical Leadership", "items": ["Vision, Mission, and Strategic Planning", "Building Community in the GL Program", "Budgeting & Stewardship", "Operations & Administration", "Developing Future Leaders", "Appreciating and Recognizing Volunteers", "Policies and Safe Environment", "Program Evaluation and Continuous Improvement", "Event Planning & Execution", "Decision Making and Communal Discernment"]}, {"title": "6 Directory-Based Competencies", "items": ["Vision of catechesis & evangelization", "Kerygmatic & Christ-centered catechesis", "Accompaniment & faith journey", "Family & community catechesis", "Catechist formation & accompaniment", "Catechesis in today's culture"]}, {"title": "Conflict Resolution", "items": ["Difficult Conversations with Compassion"]}]}, "short": "Elected BPV", "stage": "Four"}, {"role": "Catechist Mentor", "tenure": "3 catechism topics completed, or 4 years in a class, or 6+ years in the program", "learn": "Mentors other catechists", "responsibilities": ["Mentors other catechists"], "being": {"retreat": null, "habits": []}, "knowing": {"groups": [{"title": "Eligibility (combination of)", "items": ["Completion of 3 catechism topics", "Being in a class for 4 years", "Being in the program for 6+ years"]}]}, "serving": {"groups": [{"title": "Focus", "items": ["Mentoring New Catechists"]}]}, "short": "3 topics / 4–6 yrs", "stage": "Five"}];
+
+const rosterRoleCounts = {};
+PEOPLE.forEach(p => p.roles.forEach(r => { rosterRoleCounts[r] = (rosterRoleCounts[r]||0)+1; }));
+
+function rosterFor(role){
+  return PEOPLE.filter(p => p.roles.includes(role)).sort((a,b) => (a.first+a.last).localeCompare(b.first+b.last));
+}
+
+// ---------------- PERSON DETAIL MODAL (with password-gated field edits) ----------------
+const personModalOverlay = document.getElementById('personModalOverlay');
+const personModalBox = document.getElementById('personModalBox');
+const personModalContent = document.getElementById('personModalContent');
+const personModalClose = document.getElementById('personModalClose');
+
+const ALL_ROLE_OPTIONS = ['Assistant Catechist','Catechist','Class Coordinator','Program Coordinator','Catechist Mentor','Administrative Volunteer'];
+
+let modalPersonNum = null;
+let modalMode = 'view'; // 'view' | 'edit'
+let draft = {};
+
+function escapeHtml(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function prettifyRole(r){
+  return r.trim().split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+function roleListHtml(giaoLyRole){
+  if(!giaoLyRole) return '—';
+  const parts = String(giaoLyRole).split(',').map(s => s.trim()).filter(Boolean);
+  if(parts.length <= 1) return escapeHtml(prettifyRole(parts[0] || giaoLyRole));
+  return `<ul class="role-list">${parts.map(r => `<li>${escapeHtml(prettifyRole(r))}</li>`).join('')}</ul>`;
+}
+function trainingListHtml(training){
+  if(!training || !training.length) return `<span class="mf-empty">No training recorded yet</span>`;
+  return `<ul class="role-list">${training.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`;
+}
+function safeEnvBadgeHtml(val){
+  const isYes = String(val).trim().toLowerCase() === 'yes';
+  return `<span class="se-badge ${isYes ? 'se-yes' : 'se-no'}">${isYes ? 'Completed' : 'Not Completed'}</span>`;
+}
+function escapeAttr(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+async function persistClassAndSafeEnv(p){
+  const { error } = await supabaseClient
+    .from('people')
+    .update({ class: p.class, safe_environment: String(p.safeEnvironment).toLowerCase() === 'yes' })
+    .eq('legacy_num', p.num);
+  if(error) console.error('Could not save class/safe environment for ' + p.num, error);
+}
+
+async function persistRoles(p){
+  const { data: person, error: findErr } = await supabaseClient
+    .from('people').select('id').eq('legacy_num', p.num).single();
+  if(findErr || !person) { console.error('Could not find person for role save', p.num, findErr); return; }
+  const { error: delErr } = await supabaseClient.from('person_roles').delete().eq('person_id', person.id);
+  if(delErr) console.error('Could not clear roles for ' + p.num, delErr);
+  const rows = (p.roles || []).map(r => ROLE_SLUGS[r]).filter(Boolean).map(role_id => ({ person_id: person.id, role_id }));
+  if(rows.length){
+    const { error: insErr } = await supabaseClient.from('person_roles').insert(rows);
+    if(insErr) console.error('Could not save roles for ' + p.num, insErr);
+  }
+}
+
+async function persistTraining(p){
+  const { data: person, error: findErr } = await supabaseClient
+    .from('people').select('id').eq('legacy_num', p.num).single();
+  if(findErr || !person) { console.error('Could not find person for training save', p.num, findErr); return; }
+  const { error: delErr } = await supabaseClient.from('person_training').delete().eq('person_id', person.id);
+  if(delErr) console.error('Could not clear training for ' + p.num, delErr);
+  const rows = (p.catecheticalTraining || []).map(training_title => ({ person_id: person.id, training_title }));
+  if(rows.length){
+    const { error: insErr } = await supabaseClient.from('person_training').insert(rows);
+    if(insErr) console.error('Could not save training for ' + p.num, insErr);
+  }
+}
+
+async function loadAllOverrides(){
+  const { data, error } = await supabaseClient
+    .from('people')
+    .select('legacy_num, class, safe_environment, person_roles(roles(name)), person_training(training_title)');
+  if(error || !data){ console.error('Could not load roster from Supabase', error); return; }
+  for(const row of data){
+    const p = PEOPLE.find(x => x.num === row.legacy_num);
+    if(!p) continue;
+    if(row.class != null) p.class = row.class;
+    p.safeEnvironment = row.safe_environment ? 'Yes' : 'No';
+    const roles = (row.person_roles || []).map(pr => pr.roles && pr.roles.name).filter(Boolean);
+    if(roles.length){ p.roles = roles; p.giaoLyRole = roles.join(', '); }
+    p.catecheticalTraining = (row.person_training || []).map(t => t.training_title);
+  }
+}
+
+function getModalPerson(){
+  return PEOPLE.find(p => p.num === modalPersonNum);
+}
+
+function initDraftAll(p){
+  draft.training = (p.catecheticalTraining || []).slice();
+  draft.class = p.class || '';
+  draft.safeEnvironment = (String(p.safeEnvironment).toLowerCase() === 'yes') ? 'Yes' : 'No';
+  draft.giaoLyRole = (p.roles || []).slice();
+}
+
+function fieldEditorInner(target){
+  if(target === 'catecheticalTraining'){
+    return `
+      <ul class="edit-training-list">
+        ${draft.training.map((t,i) => `
+          <li>
+            <span>${escapeHtml(t)}</span>
+            <button class="edit-remove-btn" data-idx="${i}" aria-label="Remove">×</button>
+          </li>`).join('') || `<li class="edit-empty-row">No training items yet.</li>`}
+      </ul>
+      <div class="edit-add-row">
+        <input type="text" id="newTrainingInput" placeholder="Add training item…" class="roster-search" style="flex:1;">
+        <button class="edit-btn" id="addTrainingBtn">Add</button>
+      </div>
+    `;
+  }
+  if(target === 'class'){
+    return `<input type="text" id="classInput" class="roster-search" style="width:100%;" value="${escapeAttr(draft.class)}" placeholder="e.g. Lop 1">`;
+  }
+  if(target === 'safeEnvironment'){
+    return `
+      <div class="se-toggle-row">
+        <label class="se-radio"><input type="radio" name="seRadio" value="Yes" ${draft.safeEnvironment==='Yes'?'checked':''}> Completed</label>
+        <label class="se-radio"><input type="radio" name="seRadio" value="No" ${draft.safeEnvironment==='No'?'checked':''}> Not Completed</label>
+      </div>
+    `;
+  }
+  if(target === 'giaoLyRole'){
+    return `
+      <div class="role-checkbox-list">
+        ${ALL_ROLE_OPTIONS.map(r => `
+          <label class="role-checkbox">
+            <input type="checkbox" value="${r}" ${draft.giaoLyRole.includes(r) ? 'checked' : ''}> ${r}
+          </label>`).join('')}
+      </div>
+    `;
+  }
+  return '';
+}
+
+function fieldBlockHtml(target, label, viewValueHtml, wide){
+  const cls = 'modal-field' + ((wide || modalMode === 'edit') ? ' modal-field-wide' : '');
+
+  if(modalMode !== 'edit'){
+    return `<div class="${cls}"><span class="mf-label">${label}</span><span class="mf-value">${viewValueHtml}</span></div>`;
+  }
+  return `
+    <div class="${cls}">
+      <span class="mf-label">${label}</span>
+      <div class="edit-training-box">
+        ${fieldEditorInner(target)}
+      </div>
+    </div>
+  `;
+}
+
+function renderPersonModal(){
+  const p = getModalPerson();
+  if(!p) return;
+  personModalBox.classList.toggle('is-editing', modalMode === 'edit');
+  personModalContent.innerHTML = `
+    <div class="modal-eyebrow">Roster</div>
+    <div class="modal-header-row">
+      <h3 class="modal-name serif">${escapeHtml(p.name)}</h3>
+      ${modalMode === 'view' ? `<button class="edit-link-btn" id="editAllBtn">${currentCoordinator ? 'Edit' : 'Log in to Edit'}</button>` : ''}
+    </div>
+    ${modalMode === 'edit' ? `<p class="edit-note">Editing all fields below — changes are shared and visible to everyone.</p>` : ''}
+    <div class="modal-grid">
+      <div class="modal-field"><span class="mf-label">Age</span><span class="mf-value">${p.age ?? '—'}</span></div>
+      <div class="modal-field"><span class="mf-label">Birth Date</span><span class="mf-value">${p.birthDate ?? '—'}</span></div>
+      ${fieldBlockHtml('class', 'Class', escapeHtml(p.class) || '—', false)}
+      ${fieldBlockHtml('safeEnvironment', 'Safe Environment', safeEnvBadgeHtml(p.safeEnvironment), false)}
+      ${fieldBlockHtml('giaoLyRole', 'Giao Ly Role', roleListHtml(p.giaoLyRole), true)}
+      ${fieldBlockHtml('catecheticalTraining', 'Catechetical Training', trainingListHtml(p.catecheticalTraining), true)}
+    </div>
+    ${modalMode === 'edit' ? `
+      <div class="edit-save-row">
+        <button class="edit-btn edit-btn-primary" id="saveFieldBtn">Save Changes</button>
+        <button class="edit-btn" id="cancelEditBtn">Cancel</button>
+      </div>
+    ` : ''}
+  `;
+
+  const editAllBtn = personModalContent.querySelector('#editAllBtn');
+  if(editAllBtn){
+    editAllBtn.addEventListener('click', () => {
+      if(currentCoordinator){
+        modalMode = 'edit';
+        initDraftAll(p);
+        renderPersonModal();
+      } else {
+        openAuthModal('signin');
+      }
+    });
+  }
+
+  if(modalMode === 'edit'){
+    personModalContent.querySelectorAll('.edit-remove-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.idx);
+        draft.training.splice(idx, 1);
+        renderPersonModal();
+      });
+    });
+    const addBtn = personModalContent.querySelector('#addTrainingBtn');
+    const newInput = personModalContent.querySelector('#newTrainingInput');
+    const addItem = () => {
+      const val = newInput.value.trim();
+      if(val){ draft.training.push(val); newInput.value=''; renderPersonModal(); }
+    };
+    if(addBtn) addBtn.addEventListener('click', addItem);
+    if(newInput) newInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); addItem(); } });
+
+    const saveBtn = personModalContent.querySelector('#saveFieldBtn');
+    const cancelEditBtn = personModalContent.querySelector('#cancelEditBtn');
+
+    if(saveBtn) saveBtn.addEventListener('click', async () => {
+      if(!currentCoordinator){
+        openAuthModal('signin');
+        return;
+      }
+      saveBtn.textContent = 'Saving…';
+      saveBtn.disabled = true;
+
+      p.catecheticalTraining = draft.training.slice();
+      const classInput = personModalContent.querySelector('#classInput');
+      p.class = classInput ? classInput.value.trim() : p.class;
+      const seChecked = personModalContent.querySelector('input[name="seRadio"]:checked');
+      p.safeEnvironment = seChecked ? seChecked.value : p.safeEnvironment;
+      const roleChecked = Array.from(personModalContent.querySelectorAll('.role-checkbox-list input[type="checkbox"]:checked')).map(el => el.value);
+      p.roles = roleChecked;
+      p.giaoLyRole = roleChecked.join(', ');
+
+      try{
+        await persistClassAndSafeEnv(p);
+        await persistRoles(p);
+        await persistTraining(p);
+      }catch(e){
+        console.error('Save failed', e);
+        alert('Save failed — you may need to log in again, or your account may no longer be a Class Coordinator.');
+      }
+
+      modalMode = 'view';
+      renderPersonModal();
+      renderStage();
+    });
+    if(cancelEditBtn) cancelEditBtn.addEventListener('click', () => { modalMode = 'view'; renderPersonModal(); });
+  }
+}
+
+function openPersonModal(p){
+  modalPersonNum = p.num;
+  modalMode = 'view';
+  renderPersonModal();
+  personModalOverlay.classList.add('open');
+}
+function closePersonModal(){
+  personModalOverlay.classList.remove('open');
+  modalMode = 'view';
+}
+personModalClose.addEventListener('click', closePersonModal);
+personModalOverlay.addEventListener('click', (e) => {
+  if(e.target === personModalOverlay) closePersonModal();
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape') closePersonModal();
+});
+
+// ---------------- PATH NODES ----------------
+// x positions (%) and y positions (%) within the 1000x200 viewbox-relative wrap, matched to svg path key points
+const nodePositions = [
+  {x:10, y:40},
+  {x:37, y:40},
+  {x:54, y:75},
+  {x:70, y:40},
+  {x:88, y:40}
+];
+
+const pathDesktop = document.getElementById('pathNodesDesktop');
+FRAMEWORK.forEach((f, i) => {
+  const pos = nodePositions[i];
+  const node = document.createElement('div');
+  node.className = 'path-node' + (i===0 ? ' active' : '') + (i===FRAMEWORK.length-1 ? ' mentor' : '');
+  node.dataset.role = f.role;
+  node.style.left = pos.x + '%';
+  node.style.top = pos.y + '%';
+  node.innerHTML = `
+    <div class="node-ring"><div class="node-dot"></div></div>
+    <div class="node-text">
+      <div class="node-label">${f.role}</div>
+      <div class="node-sub">${f.short}</div>
+    </div>
+  `;
+  node.addEventListener('click', () => selectRole(f.role));
+  pathDesktop.appendChild(node);
+});
+
+const pathMobile = document.getElementById('pathNodesMobile');
+FRAMEWORK.forEach((f, i) => {
+  const step = document.createElement('div');
+  step.className = 'mstep' + (i===0 ? ' active' : '');
+  step.dataset.role = f.role;
+  step.innerHTML = `
+    <div class="node-ring${i===FRAMEWORK.length-1 ? ' mentor' : ''}"><div class="node-dot" style="${i===FRAMEWORK.length-1 ? 'background:var(--maroon);' : ''}"></div></div>
+    <div class="mstep-text">
+      <div class="mstep-name">${f.role}</div>
+      <div class="mstep-sub">${f.short}</div>
+    </div>
+  `;
+  step.addEventListener('click', () => selectRole(f.role));
+  pathMobile.appendChild(step);
+});
+
+// ---------------- STAGE CARD + TABS ----------------
+const tabBar = document.getElementById('tabBar');
+const tabPanels = document.getElementById('tabPanels');
+
+const tabDefs = [
+  {key:'responsibilities', main:'Responsibilities', sub:''},
+  {key:'being', main:'Spiritual Formation', sub:'“Being” (Who am I becoming?)'},
+  {key:'knowing', main:'Knowledge of the Faith', sub:'“Knowing” (What do I believe?)'},
+  {key:'serving', main:'Catechetical Skills', sub:'“Serving” (How do I accompany, teach, & lead?)'},
+  {key:'roster', main:'Roster', sub:''}
+];
+
+tabDefs.forEach((t, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'tab-btn' + (i===0 ? ' active' : '');
+  btn.dataset.key = t.key;
+  btn.innerHTML = `<span class="tab-main">${t.main}</span>${t.sub ? `<span class="tab-sub">${t.sub}</span>` : ''}`;
+  btn.addEventListener('click', () => selectTab(t.key));
+  tabBar.appendChild(btn);
+});
+
+function respPanel(f){
+  return `<ul class="resp-cols">${f.responsibilities.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+}
+function beingPanel(f){
+  const hasHabits = f.being.habits && f.being.habits.length;
+  return `
+    ${f.being.retreat ? `<div class="retreat-box"><b>Retreat</b>${f.being.retreat}</div>` : ''}
+    ${hasHabits ? `<div class="know-title">Tiny Habits</div><ul class="habits-list">${f.being.habits.map(h=>`<li>${h}</li>`).join('')}</ul>` : `<div class="know-empty">Formed through the roles that precede it.</div>`}
+  `;
+}
+function knowingPanel(f){
+  return f.knowing.groups.map(g => `
+    <div class="know-block">
+      <div class="know-title">${g.title}</div>
+      ${g.items && g.items.length ? `<ul class="know-list">${g.items.map(it=>`<li>${it}</li>`).join('')}</ul>` : ''}
+    </div>`).join('');
+}
+function servingPanel(f){
+  return f.serving.groups.map(g => `
+    <div class="know-block">
+      <div class="know-title">${g.title}</div>
+      ${g.items && g.items.length ? `<ul class="know-list">${g.items.map(it=>`<li>${it}</li>`).join('')}</ul>` : ''}
+    </div>`).join('');
+}
+const rosterColumns = [
+  {key:'name', label:'Name'},
+  {key:'giaoLyRole', label:'Giao Ly Role'},
+  {key:'class', label:'Class'},
+  {key:'safeEnvironment', label:'Safe Environment'},
+  {key:'catecheticalTraining', label:'Catechetical Training'}
+];
+
+function rosterPanel(f){
+  const roster = rosterFor(f.role);
+  if(!roster.length){
+    return `<div class="roster-empty">No one on the 2026 roster is currently registered in this role.</div>`;
+  }
+  return `
+    <div class="roster-top">
+      <div class="roster-count-badge"><b>${roster.length}</b> registered</div>
+      <input type="text" class="roster-search" placeholder="Search names or class…">
+    </div>
+    <div class="roster-table-wrap">
+      <table class="roster-table"></table>
+    </div>
+    <div class="roster-empty roster-noresults" style="display:none;">No records match your search.</div>
+  `;
+}
+
+function buildRosterTable(container, roster){
+  const state = {sortKey:'name', sortDir:1, query:''};
+  const searchInput = container.querySelector('.roster-search');
+  const table = container.querySelector('.roster-table');
+  const noResults = container.querySelector('.roster-noresults');
+  if(!table) return;
+
+  function render(){
+    const theadRow = rosterColumns.map(c => `
+      <th data-key="${c.key}" class="${state.sortKey===c.key?'sorted':''}">
+        ${c.label}<span class="sort-arrow">${state.sortKey===c.key && state.sortDir===-1 ? '▼' : '▲'}</span>
+      </th>`).join('');
+
+    let rows = roster.filter(p => {
+      if(!state.query) return true;
+      const hay = (p.name+' '+(p.class||'')).toLowerCase();
+      return hay.includes(state.query);
+    });
+
+    rows = rows.slice().sort((a,b) => {
+      let av = a[state.sortKey], bv = b[state.sortKey];
+      if(state.sortKey === 'catecheticalTraining'){
+        av = (av || []).length;
+        bv = (bv || []).length;
+      }
+      if(av==null) av=''; if(bv==null) bv='';
+      if(typeof av === 'string') av = av.toLowerCase();
+      if(typeof bv === 'string') bv = bv.toLowerCase();
+      if(av < bv) return -1*state.sortDir;
+      if(av > bv) return 1*state.sortDir;
+      return 0;
+    });
+
+    const tbodyRows = rows.map(p => `
+      <tr>
+        <td class="col-name"><button class="name-btn" data-num="${p.num}">${escapeHtml(p.name)}</button></td>
+        <td>${roleListHtml(p.giaoLyRole)}</td>
+        <td>${escapeHtml(p.class) || '—'}</td>
+        <td>${safeEnvBadgeHtml(p.safeEnvironment)}</td>
+        <td class="col-training">${trainingListHtml(p.catecheticalTraining)}</td>
+      </tr>`).join('');
+
+    table.innerHTML = `<thead><tr>${theadRow}</tr></thead><tbody>${tbodyRows}</tbody>`;
+    if(noResults) noResults.style.display = rows.length ? 'none' : 'block';
+
+    table.querySelectorAll('thead th').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        if(state.sortKey === key){ state.sortDir *= -1; }
+        else { state.sortKey = key; state.sortDir = 1; }
+        render();
+      });
+    });
+
+    table.querySelectorAll('.name-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const num = Number(btn.dataset.num);
+        const person = PEOPLE.find(p => p.num === num);
+        if(person) openPersonModal(person);
+      });
+    });
+  }
+
+  if(searchInput){
+    searchInput.addEventListener('input', () => {
+      state.query = searchInput.value.trim().toLowerCase();
+      render();
+    });
+  }
+  render();
+}
+
+let currentRole = FRAMEWORK[0].role;
+let currentTab = 'responsibilities';
+
+function renderStage(){
+  const f = FRAMEWORK.find(x => x.role === currentRole);
+  document.getElementById('stageEyebrow').textContent = 'Stage ' + f.stage;
+  document.getElementById('stageTitle').textContent = f.role;
+  document.getElementById('stageTenure').textContent = f.tenure;
+  document.getElementById('stageCta').textContent = f.learn.toUpperCase();
+
+  tabPanels.innerHTML = tabDefs.map(t => `<div class="tab-panel${t.key===currentTab?' active':''}" data-key="${t.key}"></div>`).join('');
+  const panelMap = {
+    responsibilities: respPanel(f),
+    being: beingPanel(f),
+    knowing: knowingPanel(f),
+    serving: servingPanel(f),
+    roster: rosterPanel(f)
+  };
+  tabDefs.forEach(t => {
+    const el = tabPanels.querySelector(`[data-key="${t.key}"]`);
+    el.innerHTML = panelMap[t.key];
+  });
+
+  // wire up roster table (panel exists in DOM even when hidden)
+  const rosterContainer = tabPanels.querySelector('[data-key="roster"]');
+  const roster = rosterFor(f.role);
+  if(rosterContainer && roster.length){
+    buildRosterTable(rosterContainer, roster);
+  }
+
+  // sync active states
+  document.querySelectorAll('.path-node').forEach(el => el.classList.toggle('active', el.dataset.role===currentRole));
+  document.querySelectorAll('.mstep').forEach(el => el.classList.toggle('active', el.dataset.role===currentRole));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.toggle('active', el.dataset.key===currentTab));
+}
+
+function selectRole(role){
+  currentRole = role;
+  currentTab = 'responsibilities';
+  renderStage();
+  document.querySelector('.stage-wrap').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function selectTab(key){
+  currentTab = key;
+  renderStage();
+}
+
+(async function init(){
+  await refreshAuthState();
+  await loadAllOverrides();
+  renderStage();
+})();
+</script>
+</body>
+</html>
