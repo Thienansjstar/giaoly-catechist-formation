@@ -305,6 +305,28 @@
     color:var(--navy);
   }
   .roster-search:focus{outline:2px solid var(--gold-soft);outline-offset:1px;}
+  .roster-sort-row{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .roster-sort-label{font-size:13px;color:var(--navy-45);font-weight:600;}
+  .roster-sort-btn{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 14px;
+    font-size:13px;
+    font-family:'Inter',sans-serif;
+    color:var(--navy);
+    cursor:pointer;
+  }
+  .roster-sort-btn:hover{background:var(--gold-soft)33;}
+  .roster-sort-btn.active{
+    background:var(--navy);
+    border-color:var(--navy);
+    color:#fff;
+    font-weight:600;
+  }
   .roster-table-wrap{
     max-height:460px;overflow-y:auto;overflow-x:auto;
     border-top:1px solid var(--line);
@@ -702,7 +724,9 @@ const ROLE_SLUGS = {
   'Program Coordinator': 'program_coordinator',
   'Catechist Mentor': 'catechist_mentor',
   'Administrative Volunteer': 'administrative_volunteer',
+  'Tech Admin': 'tech_admin',
 };
+const UNRESTRICTED_ROLES = ['Program Coordinator', 'Tech Admin'];
 
 let currentCoordinator = null; // { id, email } once signed in as a Class Coordinator
 let toastTimer = null;
@@ -732,18 +756,23 @@ function updateLoginButton(){
   }
 }
 
-// Coordinators can only edit people who share at least one class with them
-// (enforced server-side by RLS/can_edit_person — this is fetched purely so
-// the UI can tell someone *before* they try to save and hit a permission
-// error, not as the actual security boundary).
-async function loadCoordinatorClasses(userId){
+// A Class Coordinator can only edit people who share at least one class
+// with them; a Program Coordinator or Tech Admin can edit everyone. This is
+// enforced server-side by RLS/can_edit_person — fetched here purely so the
+// UI can tell someone *before* they try to save and hit a permission error,
+// not as the actual security boundary.
+async function loadCoordinatorInfo(userId){
   const { data, error } = await supabaseClient
     .from('people')
-    .select('class_assignments(class)')
+    .select('class_assignments(class), person_roles(roles(name))')
     .eq('auth_user_id', userId)
     .maybeSingle();
-  if(error || !data) return [];
-  return (data.class_assignments || []).map(c => c.class);
+  if(error || !data) return { classes: [], unrestricted: false };
+  const roleNames = (data.person_roles || []).map(pr => pr.roles && pr.roles.name).filter(Boolean);
+  return {
+    classes: (data.class_assignments || []).map(c => c.class),
+    unrestricted: roleNames.some(r => UNRESTRICTED_ROLES.includes(r)),
+  };
 }
 
 async function setCurrentCoordinator(session){
@@ -752,13 +781,14 @@ async function setCurrentCoordinator(session){
     updateLoginButton();
     return;
   }
-  currentCoordinator = { id: session.user.id, email: session.user.email, classes: [] };
+  currentCoordinator = { id: session.user.id, email: session.user.email, classes: [], unrestricted: false };
   updateLoginButton();
-  currentCoordinator.classes = await loadCoordinatorClasses(session.user.id);
+  Object.assign(currentCoordinator, await loadCoordinatorInfo(session.user.id));
 }
 
 function coordinatorCanEdit(p){
   if(!currentCoordinator) return false;
+  if(currentCoordinator.unrestricted) return true;
   const mine = currentCoordinator.classes || [];
   return (p.classes || []).some(c => mine.includes(c));
 }
@@ -864,17 +894,13 @@ document.getElementById('authModalOverlay').addEventListener('click', (e) => {
 let PEOPLE = [];
 const FRAMEWORK = [{"role": "Assistant Catechist", "tenure": "New volunteer — up to 2 years", "learn": "Learn to serve and support", "responsibilities": ["Assist catechists with lesson planning and classroom activities", "Help create a welcoming, respectful classroom environment", "Lead assigned portions of lesson, prayer, or activities as requested", "Coach, encourage, and engage students in discussions and group work", "Build positive relationships by being present, attentive, and loving", "Participate in GL events and attend required formation, meetings, and training"], "being": {"retreat": "Spirituality 100 — Without God We Can Do Nothing", "habits": ["Building prayer life daily (5–10 min)", "Feet on the Ground", "Nightly examen", "Hallow daily prayer app"]}, "knowing": {"groups": [{"title": "Foundation of Catholic Faith — “What We Believe and Why It Matters?”", "items": ["God loves us", "Jesus saves us", "The Holy Spirit guides us", "The Church is our faith family", "We encounter Christ through Scripture, Prayer, and Sacraments", "We respond by following Jesus and loving others"]}, {"title": "Introduction to Scripture", "items": ["Books of the Bible", "How to use the Bible"]}]}, "serving": {"groups": [{"title": "Safe Environment (Ages 18+)", "items": ["Program structure, mission, goal, growth path"]}, {"title": "Teaching & Facilitation", "items": ["Co-Teaching", "Leading prayer and teaching assigned portions of the lesson"]}, {"title": "Classroom Management", "items": ["Redirecting behavior respectfully", "Supporting transitions and routines"]}, {"title": "Accompaniment & Relationship Building", "items": ["Building relationship with the students"]}, {"title": "Collaboration & Communication", "items": ["Sharing responsibility and supporting fellow catechists"]}]}, "short": "0–2 yrs", "stage": "One"}, {"role": "Catechist", "tenure": "2 years +", "learn": "Learn to teach and accompany", "responsibilities": ["Prepare lesson plans", "Delegate lesson components to assistant catechists and ensure they deliver well", "Teach and lead the class; handle classroom management", "Communicate with the class coordinator on successes, concerns, support needs", "Help coordinators build community among catechists, students, and families", "Participate in catechist formation, retreats, and required training"], "being": {"retreat": "Emmanuel — The Lord Be with You (or) Gospel of Matthew, 4PM (Christus)", "habits": ["Building prayer life including daily examen (15–20 min)", "Pray as You Go", "Hallow daily prayer app", "Formed app"]}, "knowing": {"groups": [{"title": "Class content catechism", "items": ["Scripture", "Creed", "Sacrament", "Liturgy", "Church", "Morality"]}, {"title": "Connecting living experience to catechism", "items": []}, {"title": "Choose at least one opportunity to grow in knowledge of the faith", "items": ["Start the Seattle Archdiocese Catechetical Certification Program", "LA Congress", "DHGL (National Vietnamese-American Catechetical Conferences, Houston, June 2027 / 2029)", "Archdiocese Seattle Youth Conference — Inspire: Youth Ministry Track", "SEEK", "Steubenville"]}]}, "serving": {"groups": [{"title": "Safe Environment (Ages 18+)", "items": []}, {"title": "Teaching & Facilitation", "items": ["Lesson Planning Delivery: Art of Catechesis", "Facilitating Small Groups and Faith Sharing", "Technology in Catechesis"]}, {"title": "Classroom Management", "items": ["Child Development", "Positive Behavioral Intervention System"]}, {"title": "Accompaniment & Relationship Building", "items": ["Building community in the classroom", "The Art of Accompaniment"]}, {"title": "Collaboration & Communication", "items": ["Planning and Co-Teaching with Other Catechists", "Conflicts in Ministry"]}]}, "short": "2 yrs +", "stage": "Two"}, {"role": "Class Coordinator", "tenure": "BPV invite — must be Coordinator to be elected to BPV", "learn": "Learn to lead and develop others", "responsibilities": ["Serve as primary liaison between catechists and the BPV", "Communicate program updates, schedules, and expectations", "Walk together with BPV to lead the program", "Oversee the catechetical program for the assigned grade level", "Plan yearly curriculum & schedule; ensure faithful, consistent teaching", "Support classroom management and escalate to BPV when needed", "Coordinate sacramental preparation", "Mentor and support catechists; provide resources and constructive feedback", "Encourage catechists to participate in GL events, training, and spiritual growth", "Model joyful discipleship and servant leadership", "Build community among catechists, students, and families", "Organize meetings, team bonding, and integrate parent helpers", "Participate in catechist formation, retreats, and required training"], "being": {"retreat": "Service — The Spirit of God Is Upon Me (or) Gospel of Luke, 4PM (Christus)", "habits": ["Building prayer life including daily examen (15–20 min)", "Pray as You Go", "Hallow daily prayer app", "Formed app", "Servant Leadership (Christus)"]}, "knowing": {"groups": [{"title": "Connecting and facilitating living experience to catechism", "items": []}, {"title": "Deeper knowledge of class content to plan curriculum and ensure faithful teaching", "items": ["Additional readings, videos, research"]}, {"title": "Pursuing the Seattle Archdiocese Catechetical Certification Program", "items": ["LA Congress", "DHGL (National Vietnamese-American Catechetical Conferences, Houston, June 2027 / 2029)", "Archdiocese Seattle Youth Conference — Inspire: Youth Ministry Track", "SEEK", "Steubenville"]}]}, "serving": {"groups": [{"title": "Teaching & Facilitation", "items": ["Curriculum Planning & Implementation", "Sacramental Theology (if overseeing sacramental programs)"]}, {"title": "Classroom Management", "items": ["Supporting students with special needs"]}, {"title": "Accompaniment & Relationship Building", "items": ["Accompanying Catechists", "Fostering a Christ-Centered Classroom Culture", "Partnering with Parents"]}, {"title": "Communication and Coordination", "items": ["Effective Team Building", "Difficult Conversations with Compassion", "Conflict Resolution", "Coaching and Mentoring Catechists", "Listening and Giving Feedback"]}]}, "short": "BPV invite", "stage": "Three"}, {"role": "Program Coordinator", "tenure": "Elected BPV — 3–4+ years of experience suggested", "learn": "Learn to lead the catechetical ministry", "responsibilities": ["Provide leadership, vision, and direction for the catechetical ministry", "Ensure mission and goals are fulfilled", "Plan the annual calendar, curriculum, and program schedule", "Recruit, support, and develop coordinators and catechists", "Coordinate registration, class assignments, and GL events", "Communicate program updates, policies, and expectations", "Cultivate a Christ-centered culture of belonging and faith accompaniment", "Serve as the escalation point for program-related issues", "Serve as primary liaison between parish leadership, TNTT and VN program coordinators, catechists, and families", "Coordinate GL involvement in parish life", "Communicate with parish leaders on successes, concerns, and support needs", "Plan and oversee catechist formation; work with formation team on training, retreats, certification", "Build a Christ-centered culture and support ongoing spiritual growth of catechists", "Mentor class coordinators and future ministry leaders", "Model servant leadership rooted in prayer and discipleship"], "being": {"retreat": "New Creation — In the Beginning Was the Word / Gospel of John / Caritas (Christus) (or) Silent Retreat (Christus)", "habits": ["Building prayer life including daily examen (15–20 min)", "Pray as You Go", "Hallow daily prayer app", "Servant Leadership (Christus)"]}, "knowing": {"groups": [{"title": "Complete the Seattle Archdiocese Catechetical Certification Program", "items": []}, {"title": "Organize opportunities for catechists to grow in knowledge of the faith", "items": ["LA Congress", "DHGL (National Vietnamese-American Catechetical Conferences, Houston, June 2027 / 2029)", "Archdiocese Seattle Youth Conference — Inspire: Youth Ministry Track", "SEEK", "Steubenville"]}]}, "serving": {"groups": [{"title": "Comprehensive Catechetical Leadership", "items": ["Vision, Mission, and Strategic Planning", "Building Community in the GL Program", "Budgeting & Stewardship", "Operations & Administration", "Developing Future Leaders", "Appreciating and Recognizing Volunteers", "Policies and Safe Environment", "Program Evaluation and Continuous Improvement", "Event Planning & Execution", "Decision Making and Communal Discernment"]}, {"title": "6 Directory-Based Competencies", "items": ["Vision of catechesis & evangelization", "Kerygmatic & Christ-centered catechesis", "Accompaniment & faith journey", "Family & community catechesis", "Catechist formation & accompaniment", "Catechesis in today's culture"]}, {"title": "Conflict Resolution", "items": ["Difficult Conversations with Compassion"]}]}, "short": "Elected BPV", "stage": "Four"}, {"role": "Catechist Mentor", "tenure": "3 catechism topics completed, or 4 years in a class, or 6+ years in the program", "learn": "Mentors other catechists", "responsibilities": ["Mentors other catechists"], "being": {"retreat": null, "habits": []}, "knowing": {"groups": [{"title": "Eligibility (combination of)", "items": ["Completion of 3 catechism topics", "Being in a class for 4 years", "Being in the program for 6+ years"]}]}, "serving": {"groups": [{"title": "Focus", "items": ["Mentoring New Catechists"]}]}, "short": "3 topics / 4–6 yrs", "stage": "Five"}];
 
-function rosterFor(role){
-  return PEOPLE.filter(p => p.roles.includes(role)).sort((a,b) => (a.first+a.last).localeCompare(b.first+b.last));
-}
-
 // ---------------- PERSON DETAIL MODAL (with password-gated field edits) ----------------
 const personModalOverlay = document.getElementById('personModalOverlay');
 const personModalBox = document.getElementById('personModalBox');
 const personModalContent = document.getElementById('personModalContent');
 const personModalClose = document.getElementById('personModalClose');
 
-const ALL_ROLE_OPTIONS = ['Assistant Catechist','Catechist','Class Coordinator','Program Coordinator','Catechist Mentor','Administrative Volunteer'];
+const ALL_ROLE_OPTIONS = ['Assistant Catechist','Catechist','Class Coordinator','Program Coordinator','Catechist Mentor','Administrative Volunteer','Tech Admin'];
 
 let modalPersonNum = null;
 let modalMode = 'view'; // 'view' | 'edit'
@@ -1339,15 +1365,24 @@ const rosterColumns = [
   {key:'catecheticalTraining', label:'Catechetical Training'}
 ];
 
-function rosterPanel(f){
-  const roster = rosterFor(f.role);
-  if(!roster.length){
-    return `<div class="roster-empty">No one on the 2026 roster is currently registered in this role.</div>`;
+const SORT_BUTTONS = [
+  {key:'name', label:'Name'},
+  {key:'class', label:'Class'},
+  {key:'giaoLyRole', label:'Role'},
+];
+
+function rosterPanel(){
+  if(!PEOPLE.length){
+    return `<div class="roster-empty">No one is on the roster yet.</div>`;
   }
   return `
     <div class="roster-top">
-      <div class="roster-count-badge"><b>${roster.length}</b> registered</div>
+      <div class="roster-count-badge"><b>${PEOPLE.length}</b> on the roster</div>
       <input type="text" class="roster-search" placeholder="Search names or class…">
+    </div>
+    <div class="roster-sort-row">
+      <span class="roster-sort-label">Sort by:</span>
+      ${SORT_BUTTONS.map(s => `<button type="button" class="roster-sort-btn" data-key="${s.key}">${s.label}</button>`).join('')}
     </div>
     <div class="roster-table-wrap">
       <table class="roster-table"></table>
@@ -1361,9 +1396,23 @@ function buildRosterTable(container, roster){
   const searchInput = container.querySelector('.roster-search');
   const table = container.querySelector('.roster-table');
   const noResults = container.querySelector('.roster-noresults');
+  const sortBtns = container.querySelectorAll('.roster-sort-btn');
   if(!table) return;
 
+  function setSort(key){
+    if(state.sortKey === key){ state.sortDir *= -1; }
+    else { state.sortKey = key; state.sortDir = 1; }
+    render();
+  }
+
   function render(){
+    sortBtns.forEach(btn => {
+      const isActive = state.sortKey === btn.dataset.key;
+      btn.classList.toggle('active', isActive);
+      btn.textContent = SORT_BUTTONS.find(s => s.key === btn.dataset.key).label
+        + (isActive ? (state.sortDir === -1 ? ' ▼' : ' ▲') : '');
+    });
+
     const theadRow = rosterColumns.map(c => `
       <th data-key="${c.key}" class="${state.sortKey===c.key?'sorted':''}">
         ${c.label}<span class="sort-arrow">${state.sortKey===c.key && state.sortDir===-1 ? '▼' : '▲'}</span>
@@ -1402,12 +1451,7 @@ function buildRosterTable(container, roster){
     if(noResults) noResults.style.display = rows.length ? 'none' : 'block';
 
     table.querySelectorAll('thead th').forEach(th => {
-      th.addEventListener('click', () => {
-        const key = th.dataset.key;
-        if(state.sortKey === key){ state.sortDir *= -1; }
-        else { state.sortKey = key; state.sortDir = 1; }
-        render();
-      });
+      th.addEventListener('click', () => setSort(th.dataset.key));
     });
 
     table.querySelectorAll('.name-btn').forEach(btn => {
@@ -1418,6 +1462,10 @@ function buildRosterTable(container, roster){
       });
     });
   }
+
+  sortBtns.forEach(btn => {
+    btn.addEventListener('click', () => setSort(btn.dataset.key));
+  });
 
   if(searchInput){
     searchInput.addEventListener('input', () => {
@@ -1444,18 +1492,19 @@ function renderStage(){
     being: beingPanel(f),
     knowing: knowingPanel(f),
     serving: servingPanel(f),
-    roster: rosterPanel(f)
+    roster: rosterPanel()
   };
   tabDefs.forEach(t => {
     const el = tabPanels.querySelector(`[data-key="${t.key}"]`);
     el.innerHTML = panelMap[t.key];
   });
 
-  // wire up roster table (panel exists in DOM even when hidden)
+  // wire up roster table (panel exists in DOM even when hidden) — the
+  // roster is general: everyone, regardless of which stage/role is
+  // currently selected above.
   const rosterContainer = tabPanels.querySelector('[data-key="roster"]');
-  const roster = rosterFor(f.role);
-  if(rosterContainer && roster.length){
-    buildRosterTable(rosterContainer, roster);
+  if(rosterContainer && PEOPLE.length){
+    buildRosterTable(rosterContainer, PEOPLE);
   }
 
   // sync active states
