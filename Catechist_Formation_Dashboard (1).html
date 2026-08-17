@@ -798,50 +798,66 @@ function escapeAttr(s){
   return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 }
 
+// Supabase silently affects zero rows when RLS blocks an UPDATE/DELETE — it
+// does NOT return an error. A thrown PersistError is the only reliable signal
+// the caller (the save handler) can catch, so every write path below checks
+// for one explicitly instead of trusting the absence of `error`.
+class PersistError extends Error {}
+
+function assertNoError(error, context){
+  if(error) throw new PersistError(context + ': ' + error.message);
+}
+
+async function findPersonId(num, context){
+  const { data: person, error } = await supabaseClient
+    .from('people').select('id').eq('legacy_num', num).single();
+  assertNoError(error, context + ' (lookup)');
+  if(!person) throw new PersistError(context + ': person not found for legacy_num ' + num);
+  return person.id;
+}
+
 async function persistSafeEnvironment(p){
-  const { error } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from('people')
     .update({ safe_environment: String(p.safeEnvironment).toLowerCase() === 'yes' })
-    .eq('legacy_num', p.num);
-  if(error) console.error('Could not save safe environment for ' + p.num, error);
+    .eq('legacy_num', p.num)
+    .select('id');
+  assertNoError(error, 'Save safe environment for ' + p.num);
+  if(!data || data.length === 0){
+    throw new PersistError('Save safe environment for ' + p.num + ': no rows updated (you may no longer be a Class Coordinator)');
+  }
 }
 
 async function persistClasses(p){
-  const { data: person, error: findErr } = await supabaseClient
-    .from('people').select('id').eq('legacy_num', p.num).single();
-  if(findErr || !person) { console.error('Could not find person for class save', p.num, findErr); return; }
-  const { error: delErr } = await supabaseClient.from('class_assignments').delete().eq('person_id', person.id);
-  if(delErr) console.error('Could not clear classes for ' + p.num, delErr);
-  const rows = (p.classes || []).map(cls => ({ person_id: person.id, class: cls }));
+  const personId = await findPersonId(p.num, 'Save classes for ' + p.num);
+  const { error: delErr } = await supabaseClient.from('class_assignments').delete().eq('person_id', personId);
+  assertNoError(delErr, 'Clear classes for ' + p.num);
+  const rows = (p.classes || []).map(cls => ({ person_id: personId, class: cls }));
   if(rows.length){
     const { error: insErr } = await supabaseClient.from('class_assignments').insert(rows);
-    if(insErr) console.error('Could not save classes for ' + p.num, insErr);
+    assertNoError(insErr, 'Save classes for ' + p.num);
   }
 }
 
 async function persistRoles(p){
-  const { data: person, error: findErr } = await supabaseClient
-    .from('people').select('id').eq('legacy_num', p.num).single();
-  if(findErr || !person) { console.error('Could not find person for role save', p.num, findErr); return; }
-  const { error: delErr } = await supabaseClient.from('person_roles').delete().eq('person_id', person.id);
-  if(delErr) console.error('Could not clear roles for ' + p.num, delErr);
-  const rows = (p.roles || []).map(r => ROLE_SLUGS[r]).filter(Boolean).map(role_id => ({ person_id: person.id, role_id }));
+  const personId = await findPersonId(p.num, 'Save roles for ' + p.num);
+  const { error: delErr } = await supabaseClient.from('person_roles').delete().eq('person_id', personId);
+  assertNoError(delErr, 'Clear roles for ' + p.num);
+  const rows = (p.roles || []).map(r => ROLE_SLUGS[r]).filter(Boolean).map(role_id => ({ person_id: personId, role_id }));
   if(rows.length){
     const { error: insErr } = await supabaseClient.from('person_roles').insert(rows);
-    if(insErr) console.error('Could not save roles for ' + p.num, insErr);
+    assertNoError(insErr, 'Save roles for ' + p.num);
   }
 }
 
 async function persistTraining(p){
-  const { data: person, error: findErr } = await supabaseClient
-    .from('people').select('id').eq('legacy_num', p.num).single();
-  if(findErr || !person) { console.error('Could not find person for training save', p.num, findErr); return; }
-  const { error: delErr } = await supabaseClient.from('person_training').delete().eq('person_id', person.id);
-  if(delErr) console.error('Could not clear training for ' + p.num, delErr);
-  const rows = (p.catecheticalTraining || []).map(training_title => ({ person_id: person.id, training_title }));
+  const personId = await findPersonId(p.num, 'Save training for ' + p.num);
+  const { error: delErr } = await supabaseClient.from('person_training').delete().eq('person_id', personId);
+  assertNoError(delErr, 'Clear training for ' + p.num);
+  const rows = (p.catecheticalTraining || []).map(training_title => ({ person_id: personId, training_title }));
   if(rows.length){
     const { error: insErr } = await supabaseClient.from('person_training').insert(rows);
-    if(insErr) console.error('Could not save training for ' + p.num, insErr);
+    assertNoError(insErr, 'Save training for ' + p.num);
   }
 }
 
@@ -1046,24 +1062,41 @@ function renderPersonModal(){
       saveBtn.textContent = 'Saving…';
       saveBtn.disabled = true;
 
-      p.catecheticalTraining = draft.training.slice();
-      p.classes = draft.classes.slice();
-      p.class = p.classes.join(', ');
       const seChecked = personModalContent.querySelector('input[name="seRadio"]:checked');
-      p.safeEnvironment = seChecked ? seChecked.value : p.safeEnvironment;
       const roleChecked = Array.from(personModalContent.querySelectorAll('.role-checkbox-list input[type="checkbox"]:checked')).map(el => el.value);
-      p.roles = roleChecked;
-      p.giaoLyRole = roleChecked.join(', ');
+
+      // Build the pending values separately from `p` — do NOT mutate the
+      // shared roster object until every write has actually succeeded.
+      // Otherwise a failed/partial save leaves the in-memory roster (and
+      // whatever's rendered from it) showing changes that were never
+      // persisted to the database.
+      const pending = {
+        num: p.num,
+        catecheticalTraining: draft.training.slice(),
+        classes: draft.classes.slice(),
+        safeEnvironment: seChecked ? seChecked.value : p.safeEnvironment,
+        roles: roleChecked,
+      };
 
       try{
-        await persistSafeEnvironment(p);
-        await persistClasses(p);
-        await persistRoles(p);
-        await persistTraining(p);
+        await persistSafeEnvironment(pending);
+        await persistClasses(pending);
+        await persistRoles(pending);
+        await persistTraining(pending);
       }catch(e){
         console.error('Save failed', e);
-        alert('Save failed — you may need to log in again, or your account may no longer be a Class Coordinator.');
+        alert('Save failed: ' + e.message + '\n\nYour changes were NOT saved. You may need to log in again, or your account may no longer be a Class Coordinator. Staying in edit mode so you can retry.');
+        saveBtn.textContent = 'Save Changes';
+        saveBtn.disabled = false;
+        return; // stay in edit mode — do NOT flip to 'view' as if this succeeded
       }
+
+      p.catecheticalTraining = pending.catecheticalTraining;
+      p.classes = pending.classes;
+      p.class = pending.classes.join(', ');
+      p.safeEnvironment = pending.safeEnvironment;
+      p.roles = pending.roles;
+      p.giaoLyRole = pending.roles.join(', ');
 
       modalMode = 'view';
       renderPersonModal();
