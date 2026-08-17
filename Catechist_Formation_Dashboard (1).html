@@ -361,10 +361,15 @@
   .name-btn:focus-visible{outline:2px solid var(--gold); outline-offset:-2px;}
 
   /* ---- coordinator login ---- */
-  .coord-login-btn{
+  .coord-bar{
     position:fixed;
     top:14px; right:14px;
     z-index:90;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .coord-login-btn{
     background:var(--navy,#2c2a55);
     color:#fff;
     border:none;
@@ -375,9 +380,62 @@
     cursor:pointer;
     box-shadow:0 2px 10px rgba(0,0,0,0.18);
   }
-  .coord-login-btn.is-logged-in{background:var(--sage,#5c7a5c);}
+  .coord-status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--sage,#5c7a5c);
+    border-radius:999px;
+    padding:6px 8px 6px 16px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.18);
+  }
+  .coord-status-text{
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    max-width:220px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .coord-logout-btn{
+    background:rgba(255,255,255,0.2);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:7px 14px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .coord-logout-btn:hover{background:rgba(255,255,255,0.32);}
   @media (max-width:640px){
-    .coord-login-btn{top:8px; right:8px; padding:7px 12px; font-size:12px;}
+    .coord-bar{top:8px; right:8px;}
+    .coord-login-btn{padding:7px 12px; font-size:12px;}
+    .coord-status-text{max-width:120px; font-size:12px;}
+    .coord-logout-btn{padding:6px 10px; font-size:11px;}
+  }
+
+  /* ---- toast notice ---- */
+  .toast{
+    position:fixed;
+    top:64px; right:14px;
+    z-index:95;
+    background:var(--navy,#2c2a55);
+    color:#fff;
+    padding:12px 20px;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:600;
+    box-shadow:0 4px 16px rgba(0,0,0,0.22);
+    opacity:0;
+    transform:translateY(-6px);
+    pointer-events:none;
+    transition:opacity 0.25s ease, transform 0.25s ease;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+  @media (max-width:640px){
+    .toast{top:56px; right:8px; left:8px; padding:10px 16px;}
   }
 
   /* ---- person detail modal ---- */
@@ -614,7 +672,15 @@
   </div>
 </div>
 
-<button id="coordinatorLoginBtn" class="coord-login-btn" type="button">Coordinator Login</button>
+<div id="coordinatorBar" class="coord-bar">
+  <button id="coordinatorLoginBtn" class="coord-login-btn" type="button">Coordinator Login</button>
+  <div id="coordinatorStatus" class="coord-status" style="display:none;">
+    <span id="coordinatorStatusText" class="coord-status-text"></span>
+    <button id="coordinatorLogoutBtn" class="coord-logout-btn" type="button">Log Out</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <div class="modal-overlay" id="authModalOverlay">
   <div class="modal-box" id="authModalBox" role="dialog" aria-modal="true">
@@ -639,16 +705,30 @@ const ROLE_SLUGS = {
 };
 
 let currentCoordinator = null; // { id, email } once signed in as a Class Coordinator
+let toastTimer = null;
+
+function showToast(message){
+  const toast = document.getElementById('toast');
+  if(!toast) return;
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
 
 function updateLoginButton(){
-  const btn = document.getElementById('coordinatorLoginBtn');
-  if(!btn) return;
+  const loginBtn = document.getElementById('coordinatorLoginBtn');
+  const status = document.getElementById('coordinatorStatus');
+  const statusText = document.getElementById('coordinatorStatusText');
+  if(!loginBtn || !status || !statusText) return;
   if(currentCoordinator){
-    btn.textContent = 'Coordinator: ' + currentCoordinator.email + ' (Log out)';
-    btn.classList.add('is-logged-in');
+    loginBtn.style.display = 'none';
+    status.style.display = 'flex';
+    statusText.textContent = currentCoordinator.email;
+    statusText.title = currentCoordinator.email;
   } else {
-    btn.textContent = 'Coordinator Login';
-    btn.classList.remove('is-logged-in');
+    loginBtn.style.display = '';
+    status.style.display = 'none';
   }
 }
 
@@ -727,7 +807,9 @@ function renderAuthModal(mode, message){
     currentCoordinator = data.session ? { id: data.session.user.id, email: data.session.user.email } : null;
     updateLoginButton();
     closeAuthModal();
-    if(isSignup && !data.session){
+    if(currentCoordinator){
+      showToast((isSignup ? 'Account created — signed in as ' : 'Signed in as ') + currentCoordinator.email);
+    } else if(isSignup){
       alert('Account created. Check your email to confirm, then log in.');
     }
   };
@@ -737,16 +819,15 @@ function renderAuthModal(mode, message){
   });
 }
 
-document.getElementById('coordinatorLoginBtn').addEventListener('click', async () => {
-  if(currentCoordinator){
-    if(confirm('Log out of coordinator account (' + currentCoordinator.email + ')?')){
-      await supabaseClient.auth.signOut();
-      currentCoordinator = null;
-      updateLoginButton();
-    }
-    return;
-  }
+document.getElementById('coordinatorLoginBtn').addEventListener('click', () => {
   openAuthModal('signin');
+});
+document.getElementById('coordinatorLogoutBtn').addEventListener('click', async () => {
+  const email = currentCoordinator ? currentCoordinator.email : '';
+  await supabaseClient.auth.signOut();
+  currentCoordinator = null;
+  updateLoginButton();
+  showToast('Logged out' + (email ? ' (' + email + ')' : ''));
 });
 document.getElementById('authModalClose').addEventListener('click', closeAuthModal);
 document.getElementById('authModalOverlay').addEventListener('click', (e) => {
