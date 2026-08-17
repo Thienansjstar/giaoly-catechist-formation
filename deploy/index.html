@@ -482,6 +482,46 @@
     padding:36px 34px 30px;
   }
   .modal-box.is-editing{max-width:480px;}
+  .modal-box-wide{max-width:560px;}
+
+  /* ---- events ---- */
+  .events-list{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+  .event-row{
+    all:unset;
+    display:block;
+    cursor:pointer;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+    background:var(--white);
+  }
+  .event-row:hover{border-color:var(--gold);background:var(--gold-soft)22;}
+  .event-row-main{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .event-row-title{font-weight:700;color:var(--navy);font-size:15px;}
+  .event-row-date{font-size:13px;color:var(--navy-45);white-space:nowrap;}
+  .event-row-desc{font-size:13px;color:var(--navy-45);margin-top:4px;}
+  .event-row-count{font-size:12px;color:var(--sage);font-weight:600;margin-top:6px;}
+  .event-new-form{
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:18px;
+    background:var(--white);
+  }
+  .event-attendee-list{
+    max-height:400px;overflow-y:auto;
+    border-top:1px solid var(--line);
+  }
+  .event-attendee-row{
+    display:flex;align-items:center;gap:12px;
+    padding:9px 4px;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+    cursor:pointer;
+  }
+  .event-attendee-row input[type="checkbox"]{width:17px;height:17px;flex-shrink:0;}
+  .event-attendee-row span:first-of-type{flex:1;color:var(--navy);}
+  .event-attendee-class{font-size:12px;color:var(--navy-45);}
   .modal-close{
     all:unset;
     position:absolute;top:16px;right:18px;
@@ -711,6 +751,13 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="eventModalOverlay">
+  <div class="modal-box modal-box-wide" id="eventModalBox" role="dialog" aria-modal="true">
+    <button class="modal-close" id="eventModalClose" aria-label="Close">×</button>
+    <div id="eventModalContent"></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://lrrmasbimmzfgkbqvsae.supabase.co';
@@ -798,8 +845,9 @@ async function refreshAuthState(){
   await setCurrentCoordinator(data && data.session);
 }
 
-supabaseClient.auth.onAuthStateChange((_event, session) => {
-  setCurrentCoordinator(session);
+supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+  await setCurrentCoordinator(session);
+  if(typeof renderStage === 'function' && PEOPLE.length) renderStage();
 });
 
 function openAuthModal(mode){
@@ -866,6 +914,7 @@ function renderAuthModal(mode, message){
     closeAuthModal();
     if(currentCoordinator){
       showToast((isSignup ? 'Account created — signed in as ' : 'Signed in as ') + currentCoordinator.email);
+      if(PEOPLE.length) renderStage();
     } else if(isSignup){
       alert('Account created. Check your email to confirm, then log in.');
     }
@@ -885,6 +934,7 @@ document.getElementById('coordinatorLogoutBtn').addEventListener('click', async 
   currentCoordinator = null;
   updateLoginButton();
   showToast('Logged out' + (email ? ' (' + email + ')' : ''));
+  if(PEOPLE.length) renderStage();
 });
 document.getElementById('authModalClose').addEventListener('click', closeAuthModal);
 document.getElementById('authModalOverlay').addEventListener('click', (e) => {
@@ -1009,13 +1059,14 @@ function computeAge(birthDateStr){
 async function loadPeopleFromSupabase(){
   const { data, error } = await supabaseClient
     .from('people')
-    .select('legacy_num, first_name, middle_name, last_name, birth_date, safe_environment, person_roles(roles(name)), person_training(training_title), class_assignments(class)')
+    .select('id, legacy_num, first_name, middle_name, last_name, birth_date, safe_environment, person_roles(roles(name)), person_training(training_title), class_assignments(class)')
     .order('legacy_num');
   if(error || !data){ console.error('Could not load roster from Supabase', error); return; }
   PEOPLE = data.map(row => {
     const roles = (row.person_roles || []).map(pr => pr.roles && pr.roles.name).filter(Boolean);
     const classes = (row.class_assignments || []).map(c => c.class).sort(naturalCompare);
     return {
+      id: row.id,
       num: row.legacy_num,
       first: row.first_name,
       middle: row.middle_name,
@@ -1031,6 +1082,72 @@ async function loadPeopleFromSupabase(){
       safeEnvironment: row.safe_environment ? 'Yes' : 'No',
     };
   });
+}
+
+let EVENTS = [];
+
+async function loadEvents(){
+  const { data, error } = await supabaseClient
+    .from('training_events')
+    .select('id, title, event_date, description, training_attendance(person_id)')
+    .order('event_date', { ascending: false, nullsFirst: false });
+  if(error || !data){ console.error('Could not load events from Supabase', error); return; }
+  EVENTS = data.map(e => ({
+    id: e.id,
+    title: e.title,
+    eventDate: e.event_date,
+    description: e.description,
+    attendeeIds: (e.training_attendance || []).map(a => a.person_id),
+  }));
+}
+
+async function createEvent(title, eventDate, description){
+  const { data, error } = await supabaseClient
+    .from('training_events')
+    .insert({ title, event_date: eventDate || null, description: description || null })
+    .select('id, title, event_date, description')
+    .single();
+  if(error) throw new PersistError('Create event: ' + error.message);
+  EVENTS.unshift({ id: data.id, title: data.title, eventDate: data.event_date, description: data.description, attendeeIds: [] });
+  return data.id;
+}
+
+async function deleteEvent(eventId){
+  const { error } = await supabaseClient.from('training_events').delete().eq('id', eventId);
+  if(error) throw new PersistError('Delete event: ' + error.message);
+  EVENTS = EVENTS.filter(e => e.id !== eventId);
+}
+
+async function setAttendance(eventId, personId, attended){
+  if(attended){
+    const { error } = await supabaseClient.from('training_attendance').insert({ event_id: eventId, person_id: personId });
+    assertNoError(error, 'Mark attendance');
+  } else {
+    const { error } = await supabaseClient.from('training_attendance').delete().eq('event_id', eventId).eq('person_id', personId);
+    assertNoError(error, 'Remove attendance');
+  }
+  // Keep local state in sync without a full reload: the event's attendee
+  // list, and the affected person's own training list (the DB trigger is
+  // the actual source of truth for this — this just mirrors it locally).
+  const ev = EVENTS.find(e => e.id === eventId);
+  if(ev){
+    ev.attendeeIds = attended
+      ? [...new Set([...ev.attendeeIds, personId])]
+      : ev.attendeeIds.filter(id => id !== personId);
+  }
+  const person = PEOPLE.find(p => p.id === personId);
+  if(person && ev){
+    const has = person.catecheticalTraining.includes(ev.title);
+    if(attended && !has) person.catecheticalTraining = [...person.catecheticalTraining, ev.title];
+    if(!attended && has){
+      // Only drop it locally if they're not still credited via another
+      // event with the same title (mirrors the DB trigger's own rule).
+      const stillCredited = EVENTS.some(e => e.title === ev.title && e.attendeeIds.includes(personId));
+      if(!stillCredited){
+        person.catecheticalTraining = person.catecheticalTraining.filter(t => t !== ev.title);
+      }
+    }
+  }
 }
 
 function getModalPerson(){
@@ -1264,7 +1381,7 @@ personModalOverlay.addEventListener('click', (e) => {
   if(e.target === personModalOverlay) closePersonModal();
 });
 document.addEventListener('keydown', (e) => {
-  if(e.key === 'Escape') closePersonModal();
+  if(e.key === 'Escape'){ closePersonModal(); closeEventModal(); }
 });
 
 // ---------------- PATH NODES ----------------
@@ -1321,7 +1438,8 @@ const tabDefs = [
   {key:'being', main:'Spiritual Formation', sub:'“Being” (Who am I becoming?)'},
   {key:'knowing', main:'Knowledge of the Faith', sub:'“Knowing” (What do I believe?)'},
   {key:'serving', main:'Catechetical Skills', sub:'“Serving” (How do I accompany, teach, & lead?)'},
-  {key:'roster', main:'Roster', sub:''}
+  {key:'roster', main:'Roster', sub:''},
+  {key:'events', main:'Events', sub:''}
 ];
 
 tabDefs.forEach((t, i) => {
@@ -1492,6 +1610,192 @@ function buildRosterTable(container, roster){
   render();
 }
 
+// ---------------- EVENTS (training sessions + attendance) ----------------
+function formatEventDate(d){
+  if(!d) return 'Date TBD';
+  const dt = new Date(d + 'T00:00:00');
+  if(isNaN(dt.getTime())) return d;
+  return dt.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+}
+
+function eventsPanel(){
+  const canManage = !!(currentCoordinator && currentCoordinator.unrestricted);
+  const knownTitles = [...new Set(PEOPLE.flatMap(p => p.catecheticalTraining))].sort(naturalCompare);
+  return `
+    <div class="roster-top">
+      <div class="roster-count-badge"><b>${EVENTS.length}</b> training events</div>
+      ${canManage ? `<button class="edit-btn edit-btn-primary" id="newEventBtn">+ New Event</button>` : ''}
+    </div>
+    ${canManage ? `
+      <div class="event-new-form" id="newEventForm" style="display:none;">
+        <div class="edit-add-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+          <input type="text" id="newEventTitle" class="roster-search" placeholder="Training title (e.g. Co-Teaching)" list="trainingTitleSuggestions">
+          <datalist id="trainingTitleSuggestions">
+            ${knownTitles.map(t => `<option value="${escapeAttr(t)}">`).join('')}
+          </datalist>
+          <input type="date" id="newEventDate" class="roster-search">
+          <input type="text" id="newEventDescription" class="roster-search" placeholder="Description (optional)">
+        </div>
+        <div class="edit-password-row" style="margin-top:10px;">
+          <button class="edit-btn edit-btn-primary" id="createEventBtn">Create Event</button>
+          <button class="edit-btn" id="cancelNewEventBtn">Cancel</button>
+        </div>
+      </div>
+    ` : ''}
+    <div class="events-list">
+      ${EVENTS.length ? EVENTS.map(eventRowHtml).join('') : `<div class="roster-empty">No training events yet.</div>`}
+    </div>
+  `;
+}
+
+function eventRowHtml(e){
+  return `
+    <button type="button" class="event-row" data-event-id="${e.id}">
+      <div class="event-row-main">
+        <span class="event-row-title">${escapeHtml(e.title)}</span>
+        <span class="event-row-date">${formatEventDate(e.eventDate)}</span>
+      </div>
+      ${e.description ? `<div class="event-row-desc">${escapeHtml(e.description)}</div>` : ''}
+      <div class="event-row-count">${e.attendeeIds.length} attended</div>
+    </button>
+  `;
+}
+
+function wireEventsPanel(container){
+  const canManage = !!(currentCoordinator && currentCoordinator.unrestricted);
+
+  container.querySelectorAll('.event-row').forEach(btn => {
+    btn.addEventListener('click', () => openEventModal(btn.dataset.eventId));
+  });
+
+  if(!canManage) return;
+
+  const newEventBtn = container.querySelector('#newEventBtn');
+  const form = container.querySelector('#newEventForm');
+  if(newEventBtn && form){
+    newEventBtn.addEventListener('click', () => {
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    });
+  }
+  const cancelBtn = container.querySelector('#cancelNewEventBtn');
+  if(cancelBtn && form) cancelBtn.addEventListener('click', () => { form.style.display = 'none'; });
+
+  const createBtn = container.querySelector('#createEventBtn');
+  if(createBtn){
+    createBtn.addEventListener('click', async () => {
+      const title = container.querySelector('#newEventTitle').value.trim();
+      const eventDate = container.querySelector('#newEventDate').value;
+      const description = container.querySelector('#newEventDescription').value.trim();
+      if(!title){ showToast('Enter a training title first.'); return; }
+      createBtn.disabled = true;
+      createBtn.textContent = 'Creating…';
+      try{
+        await createEvent(title, eventDate, description);
+        showToast('Event created: ' + title);
+        renderStage();
+      }catch(e){
+        console.error('Create event failed', e);
+        showToast('Could not create event: ' + e.message);
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create Event';
+      }
+    });
+  }
+}
+
+let currentEventId = null;
+let eventModalQuery = '';
+
+function openEventModal(eventId){
+  currentEventId = eventId;
+  eventModalQuery = '';
+  renderEventModal();
+  document.getElementById('eventModalOverlay').classList.add('open');
+}
+function closeEventModal(){
+  document.getElementById('eventModalOverlay').classList.remove('open');
+  currentEventId = null;
+}
+
+function renderEventModal(){
+  const ev = EVENTS.find(e => e.id === currentEventId);
+  const content = document.getElementById('eventModalContent');
+  if(!ev || !content) return;
+  const canManage = !!(currentCoordinator && currentCoordinator.unrestricted);
+  const q = eventModalQuery.toLowerCase();
+  const rows = PEOPLE
+    .filter(p => !q || (p.name + ' ' + (p.class || '')).toLowerCase().includes(q))
+    .slice()
+    .sort((a,b) => naturalCompare(a.name, b.name));
+
+  content.innerHTML = `
+    <div class="modal-eyebrow">Training Event</div>
+    <div class="modal-header-row">
+      <h3 class="modal-name serif">${escapeHtml(ev.title)}</h3>
+      ${canManage ? `<button class="edit-link-btn" id="deleteEventBtn">Delete Event</button>` : ''}
+    </div>
+    <p class="edit-note">${formatEventDate(ev.eventDate)}${ev.description ? ' — ' + escapeHtml(ev.description) : ''}</p>
+    <p class="edit-note"><b>${ev.attendeeIds.length}</b> attended${canManage ? ' — check off who was there:' : ''}</p>
+    <input type="text" id="eventAttendeeSearch" class="roster-search" placeholder="Search names or class…" style="width:100%;margin-bottom:10px;" value="${escapeAttr(eventModalQuery)}">
+    <div class="event-attendee-list">
+      ${rows.map(p => `
+        <label class="event-attendee-row">
+          <input type="checkbox" data-person-id="${p.id}" ${ev.attendeeIds.includes(p.id) ? 'checked' : ''} ${canManage ? '' : 'disabled'}>
+          <span>${escapeHtml(p.name)}</span>
+          <span class="event-attendee-class">${escapeHtml(p.class) || '—'}</span>
+        </label>
+      `).join('')}
+    </div>
+  `;
+
+  const searchInput = content.querySelector('#eventAttendeeSearch');
+  if(searchInput){
+    searchInput.addEventListener('input', () => {
+      eventModalQuery = searchInput.value;
+      renderEventModal();
+      const el = document.getElementById('eventAttendeeSearch');
+      if(el){ el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+    });
+  }
+
+  if(canManage){
+    content.querySelectorAll('.event-attendee-row input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', async () => {
+        const personId = cb.dataset.personId;
+        const wanted = cb.checked;
+        cb.disabled = true;
+        try{
+          await setAttendance(currentEventId, personId, wanted);
+        }catch(e){
+          console.error('Attendance update failed', e);
+          showToast('Could not update attendance: ' + e.message);
+        }
+        renderEventModal(); // refresh attended count + persisted checkbox state
+      });
+    });
+    const deleteBtn = content.querySelector('#deleteEventBtn');
+    if(deleteBtn){
+      deleteBtn.addEventListener('click', async () => {
+        if(!confirm('Delete "' + ev.title + '"? This removes the event and everyone\'s attendance record for it — their training credit is removed unless they attended another event with the same title.')) return;
+        try{
+          await deleteEvent(currentEventId);
+          showToast('Event deleted.');
+          closeEventModal();
+          renderStage();
+        }catch(e){
+          console.error('Delete event failed', e);
+          showToast('Could not delete event: ' + e.message);
+        }
+      });
+    }
+  }
+}
+
+document.getElementById('eventModalClose').addEventListener('click', closeEventModal);
+document.getElementById('eventModalOverlay').addEventListener('click', (e) => {
+  if(e.target === document.getElementById('eventModalOverlay')) closeEventModal();
+});
+
 let currentRole = FRAMEWORK[0].role;
 let currentTab = 'responsibilities';
 
@@ -1508,7 +1812,8 @@ function renderStage(){
     being: beingPanel(f),
     knowing: knowingPanel(f),
     serving: servingPanel(f),
-    roster: rosterPanel()
+    roster: rosterPanel(),
+    events: eventsPanel()
   };
   tabDefs.forEach(t => {
     const el = tabPanels.querySelector(`[data-key="${t.key}"]`);
@@ -1521,6 +1826,12 @@ function renderStage(){
   const rosterContainer = tabPanels.querySelector('[data-key="roster"]');
   if(rosterContainer && PEOPLE.length){
     buildRosterTable(rosterContainer, PEOPLE);
+  }
+
+  // events is likewise general, not tied to the currently selected stage.
+  const eventsContainer = tabPanels.querySelector('[data-key="events"]');
+  if(eventsContainer){
+    wireEventsPanel(eventsContainer);
   }
 
   // sync active states
@@ -1543,6 +1854,7 @@ function selectTab(key){
 (async function init(){
   await refreshAuthState();
   await loadPeopleFromSupabase();
+  await loadEvents();
   renderStage();
 })();
 </script>
