@@ -798,12 +798,25 @@ function escapeAttr(s){
   return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 }
 
-async function persistClassAndSafeEnv(p){
+async function persistSafeEnvironment(p){
   const { error } = await supabaseClient
     .from('people')
-    .update({ class: p.class, safe_environment: String(p.safeEnvironment).toLowerCase() === 'yes' })
+    .update({ safe_environment: String(p.safeEnvironment).toLowerCase() === 'yes' })
     .eq('legacy_num', p.num);
-  if(error) console.error('Could not save class/safe environment for ' + p.num, error);
+  if(error) console.error('Could not save safe environment for ' + p.num, error);
+}
+
+async function persistClasses(p){
+  const { data: person, error: findErr } = await supabaseClient
+    .from('people').select('id').eq('legacy_num', p.num).single();
+  if(findErr || !person) { console.error('Could not find person for class save', p.num, findErr); return; }
+  const { error: delErr } = await supabaseClient.from('class_assignments').delete().eq('person_id', person.id);
+  if(delErr) console.error('Could not clear classes for ' + p.num, delErr);
+  const rows = (p.classes || []).map(cls => ({ person_id: person.id, class: cls }));
+  if(rows.length){
+    const { error: insErr } = await supabaseClient.from('class_assignments').insert(rows);
+    if(insErr) console.error('Could not save classes for ' + p.num, insErr);
+  }
 }
 
 async function persistRoles(p){
@@ -846,11 +859,12 @@ function computeAge(birthDateStr){
 async function loadPeopleFromSupabase(){
   const { data, error } = await supabaseClient
     .from('people')
-    .select('legacy_num, first_name, middle_name, last_name, birth_date, class, safe_environment, person_roles(roles(name)), person_training(training_title)')
+    .select('legacy_num, first_name, middle_name, last_name, birth_date, safe_environment, person_roles(roles(name)), person_training(training_title), class_assignments(class)')
     .order('legacy_num');
   if(error || !data){ console.error('Could not load roster from Supabase', error); return; }
   PEOPLE = data.map(row => {
     const roles = (row.person_roles || []).map(pr => pr.roles && pr.roles.name).filter(Boolean);
+    const classes = (row.class_assignments || []).map(c => c.class).sort();
     return {
       num: row.legacy_num,
       first: row.first_name,
@@ -861,7 +875,8 @@ async function loadPeopleFromSupabase(){
       age: computeAge(row.birth_date),
       giaoLyRole: roles.join(', '),
       roles,
-      class: row.class,
+      classes,
+      class: classes.join(', '),
       catecheticalTraining: (row.person_training || []).map(t => t.training_title),
       safeEnvironment: row.safe_environment ? 'Yes' : 'No',
     };
@@ -874,7 +889,7 @@ function getModalPerson(){
 
 function initDraftAll(p){
   draft.training = (p.catecheticalTraining || []).slice();
-  draft.class = p.class || '';
+  draft.classes = (p.classes || []).slice();
   draft.safeEnvironment = (String(p.safeEnvironment).toLowerCase() === 'yes') ? 'Yes' : 'No';
   draft.giaoLyRole = (p.roles || []).slice();
 }
@@ -895,8 +910,20 @@ function fieldEditorInner(target){
       </div>
     `;
   }
-  if(target === 'class'){
-    return `<input type="text" id="classInput" class="roster-search" style="width:100%;" value="${escapeAttr(draft.class)}" placeholder="e.g. Lop 1">`;
+  if(target === 'classes'){
+    return `
+      <ul class="edit-training-list">
+        ${draft.classes.map((c,i) => `
+          <li>
+            <span>${escapeHtml(c)}</span>
+            <button class="edit-remove-class-btn" data-classidx="${i}" aria-label="Remove">×</button>
+          </li>`).join('') || `<li class="edit-empty-row">No classes assigned yet.</li>`}
+      </ul>
+      <div class="edit-add-row">
+        <input type="text" id="newClassInput" placeholder="Add class (e.g. Lop 1)…" class="roster-search" style="flex:1;">
+        <button class="edit-btn" id="addClassBtn">Add</button>
+      </div>
+    `;
   }
   if(target === 'safeEnvironment'){
     return `
@@ -949,7 +976,7 @@ function renderPersonModal(){
     <div class="modal-grid">
       <div class="modal-field"><span class="mf-label">Age</span><span class="mf-value">${p.age ?? '—'}</span></div>
       <div class="modal-field"><span class="mf-label">Birth Date</span><span class="mf-value">${p.birthDate ?? '—'}</span></div>
-      ${fieldBlockHtml('class', 'Class', escapeHtml(p.class) || '—', false)}
+      ${fieldBlockHtml('classes', 'Class', escapeHtml(p.class) || '—', true)}
       ${fieldBlockHtml('safeEnvironment', 'Safe Environment', safeEnvBadgeHtml(p.safeEnvironment), false)}
       ${fieldBlockHtml('giaoLyRole', 'Giao Ly Role', roleListHtml(p.giaoLyRole), true)}
       ${fieldBlockHtml('catecheticalTraining', 'Catechetical Training', trainingListHtml(p.catecheticalTraining), true)}
@@ -983,6 +1010,22 @@ function renderPersonModal(){
         renderPersonModal();
       });
     });
+    personModalContent.querySelectorAll('.edit-remove-class-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.classidx);
+        draft.classes.splice(idx, 1);
+        renderPersonModal();
+      });
+    });
+    const addClassBtn = personModalContent.querySelector('#addClassBtn');
+    const newClassInput = personModalContent.querySelector('#newClassInput');
+    const addClass = () => {
+      const val = newClassInput.value.trim();
+      if(val){ draft.classes.push(val); newClassInput.value=''; renderPersonModal(); }
+    };
+    if(addClassBtn) addClassBtn.addEventListener('click', addClass);
+    if(newClassInput) newClassInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); addClass(); } });
+
     const addBtn = personModalContent.querySelector('#addTrainingBtn');
     const newInput = personModalContent.querySelector('#newTrainingInput');
     const addItem = () => {
@@ -1004,8 +1047,8 @@ function renderPersonModal(){
       saveBtn.disabled = true;
 
       p.catecheticalTraining = draft.training.slice();
-      const classInput = personModalContent.querySelector('#classInput');
-      p.class = classInput ? classInput.value.trim() : p.class;
+      p.classes = draft.classes.slice();
+      p.class = p.classes.join(', ');
       const seChecked = personModalContent.querySelector('input[name="seRadio"]:checked');
       p.safeEnvironment = seChecked ? seChecked.value : p.safeEnvironment;
       const roleChecked = Array.from(personModalContent.querySelectorAll('.role-checkbox-list input[type="checkbox"]:checked')).map(el => el.value);
@@ -1013,7 +1056,8 @@ function renderPersonModal(){
       p.giaoLyRole = roleChecked.join(', ');
 
       try{
-        await persistClassAndSafeEnv(p);
+        await persistSafeEnvironment(p);
+        await persistClasses(p);
         await persistRoles(p);
         await persistTraining(p);
       }catch(e){
