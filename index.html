@@ -732,16 +732,44 @@ function updateLoginButton(){
   }
 }
 
+// Coordinators can only edit people who share at least one class with them
+// (enforced server-side by RLS/can_edit_person — this is fetched purely so
+// the UI can tell someone *before* they try to save and hit a permission
+// error, not as the actual security boundary).
+async function loadCoordinatorClasses(userId){
+  const { data, error } = await supabaseClient
+    .from('people')
+    .select('class_assignments(class)')
+    .eq('auth_user_id', userId)
+    .maybeSingle();
+  if(error || !data) return [];
+  return (data.class_assignments || []).map(c => c.class);
+}
+
+async function setCurrentCoordinator(session){
+  if(!session){
+    currentCoordinator = null;
+    updateLoginButton();
+    return;
+  }
+  currentCoordinator = { id: session.user.id, email: session.user.email, classes: [] };
+  updateLoginButton();
+  currentCoordinator.classes = await loadCoordinatorClasses(session.user.id);
+}
+
+function coordinatorCanEdit(p){
+  if(!currentCoordinator) return false;
+  const mine = currentCoordinator.classes || [];
+  return (p.classes || []).some(c => mine.includes(c));
+}
+
 async function refreshAuthState(){
   const { data } = await supabaseClient.auth.getSession();
-  const session = data && data.session;
-  currentCoordinator = session ? { id: session.user.id, email: session.user.email } : null;
-  updateLoginButton();
+  await setCurrentCoordinator(data && data.session);
 }
 
 supabaseClient.auth.onAuthStateChange((_event, session) => {
-  currentCoordinator = session ? { id: session.user.id, email: session.user.email } : null;
-  updateLoginButton();
+  setCurrentCoordinator(session);
 });
 
 function openAuthModal(mode){
@@ -804,8 +832,7 @@ function renderAuthModal(mode, message){
         : 'Log in failed: ' + error.message);
       return;
     }
-    currentCoordinator = data.session ? { id: data.session.user.id, email: data.session.user.email } : null;
-    updateLoginButton();
+    await setCurrentCoordinator(data.session);
     closeAuthModal();
     if(currentCoordinator){
       showToast((isSignup ? 'Account created — signed in as ' : 'Signed in as ') + currentCoordinator.email);
@@ -1067,7 +1094,9 @@ function renderPersonModal(){
     <div class="modal-eyebrow">Roster</div>
     <div class="modal-header-row">
       <h3 class="modal-name serif">${escapeHtml(p.name)}</h3>
-      ${modalMode === 'view' ? `<button class="edit-link-btn" id="editAllBtn">${currentCoordinator ? 'Edit' : 'Log in to Edit'}</button>` : ''}
+      ${modalMode === 'view' ? `<button class="edit-link-btn" id="editAllBtn">${
+        !currentCoordinator ? 'Log in to Edit' : coordinatorCanEdit(p) ? 'Edit' : 'Outside your class'
+      }</button>` : ''}
     </div>
     ${modalMode === 'edit' ? `<p class="edit-note">Editing all fields below — changes are shared and visible to everyone.</p>` : ''}
     <div class="modal-grid">
@@ -1089,12 +1118,15 @@ function renderPersonModal(){
   const editAllBtn = personModalContent.querySelector('#editAllBtn');
   if(editAllBtn){
     editAllBtn.addEventListener('click', () => {
-      if(currentCoordinator){
+      if(!currentCoordinator){
+        openAuthModal('signin');
+      } else if(coordinatorCanEdit(p)){
         modalMode = 'edit';
         initDraftAll(p);
         renderPersonModal();
       } else {
-        openAuthModal('signin');
+        const mine = (currentCoordinator.classes || []).join(', ') || 'no class';
+        showToast('You can only edit people in your own class (' + mine + ').');
       }
     });
   }
@@ -1160,8 +1192,12 @@ function renderPersonModal(){
       };
 
       try{
-        await persistSafeEnvironment(pending);
+        // Classes go first: if this save is what brings a person into the
+        // coordinator's class for the first time, can_edit_person() needs
+        // that class_assignments row to exist before the other writes
+        // (which RLS gates on already sharing a class) are attempted.
         await persistClasses(pending);
+        await persistSafeEnvironment(pending);
         await persistRoles(pending);
         await persistTraining(pending);
       }catch(e){
