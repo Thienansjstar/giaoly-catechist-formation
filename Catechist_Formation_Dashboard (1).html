@@ -645,6 +645,19 @@
   table.roster-table .role-list{padding:3px 0;}
   table.roster-table .role-list li{white-space:nowrap;}
   table.roster-table tbody tr:hover{background:var(--white);}
+  .training-details summary{
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+    color:var(--sage-dark, var(--sage));
+    list-style:none;
+    user-select:none;
+  }
+  .training-details summary::-webkit-details-marker{display:none;}
+  .training-details summary::before{content:'▸ ';}
+  .training-details[open] summary::before{content:'▾ ';}
+  .training-details[open] summary{margin-bottom:6px;}
+  .training-details .role-list{margin-left:2px;}
   .roster-empty{font-size:14px;color:var(--navy-45);font-style:italic;padding:14px 2px;}
 
   /* ===================== FOOTER ===================== */
@@ -735,7 +748,7 @@
 </div>
 
 <div id="coordinatorBar" class="coord-bar">
-  <button id="coordinatorLoginBtn" class="coord-login-btn" type="button">Coordinator Login</button>
+  <button id="coordinatorLoginBtn" class="coord-login-btn" type="button">Admin Login</button>
   <div id="coordinatorStatus" class="coord-status" style="display:none;">
     <span id="coordinatorStatusText" class="coord-status-text"></span>
     <button id="coordinatorLogoutBtn" class="coord-logout-btn" type="button">Log Out</button>
@@ -862,11 +875,11 @@ function renderAuthModal(mode, message){
   const content = document.getElementById('authModalContent');
   const isSignup = mode === 'signup';
   content.innerHTML = `
-    <div class="modal-eyebrow">Class Coordinators Only</div>
-    <h3 class="modal-name serif">${isSignup ? 'Create Coordinator Account' : 'Coordinator Log In'}</h3>
+    <div class="modal-eyebrow">Admin Access Only</div>
+    <h3 class="modal-name serif">${isSignup ? 'Create Admin Account' : 'Admin Log In'}</h3>
     <p class="edit-note">${isSignup
-      ? 'Sign-up only succeeds if this email matches a Class Coordinator on the roster.'
-      : 'Log in with the email and password you used to create your coordinator account.'}</p>
+      ? 'Sign-up only succeeds if this email matches a Coordinator or Admin on the roster.'
+      : 'Log in with the email and password you used to create your admin account.'}</p>
     <div class="edit-password-box">
       <div class="edit-add-row" style="flex-direction:column;align-items:stretch;gap:10px;">
         <input type="email" id="authEmailInput" placeholder="Email" class="roster-search" autocomplete="email">
@@ -880,7 +893,7 @@ function renderAuthModal(mode, message){
       <p class="edit-note" style="margin-top:10px;">
         ${isSignup
           ? `Already have an account? <a href="#" id="authSwitchLink">Log in</a>`
-          : `New coordinator? <a href="#" id="authSwitchLink">Create an account</a>`}
+          : `New admin? <a href="#" id="authSwitchLink">Create an account</a>`}
       </p>
     </div>
   `;
@@ -906,7 +919,7 @@ function renderAuthModal(mode, message){
       : await supabaseClient.auth.signInWithPassword({ email, password });
     if(error){
       renderAuthModal(mode, isSignup
-        ? 'Sign-up failed: this email is not recognized as a Class Coordinator, or an account already exists.'
+        ? 'Sign-up failed: this email is not recognized as a Coordinator or Admin, or an account already exists.'
         : 'Log in failed: ' + error.message);
       return;
     }
@@ -972,7 +985,8 @@ function roleListHtml(giaoLyRole){
 }
 function trainingListHtml(training){
   if(!training || !training.length) return `<span class="mf-empty">No training recorded yet</span>`;
-  return `<ul class="role-list">${training.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`;
+  const n = training.length;
+  return `<details class="training-details"><summary>${n} training${n===1?'':'s'}</summary><ul class="role-list">${training.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul></details>`;
 }
 function safeEnvBadgeHtml(val){
   const isYes = String(val).trim().toLowerCase() === 'yes';
@@ -1215,9 +1229,13 @@ function fieldEditorInner(target){
 
 function fieldBlockHtml(target, label, viewValueHtml, wide){
   const cls = 'modal-field' + ((wide || modalMode === 'edit') ? ' modal-field-wide' : '');
+  const trainingLocked = target === 'catecheticalTraining' && !(currentCoordinator && currentCoordinator.unrestricted);
 
-  if(modalMode !== 'edit'){
-    return `<div class="${cls}"><span class="mf-label">${label}</span><span class="mf-value">${viewValueHtml}</span></div>`;
+  if(modalMode !== 'edit' || trainingLocked){
+    const lockedNote = (modalMode === 'edit' && trainingLocked)
+      ? `<p class="edit-note" style="margin:6px 0 0;font-size:12px;">Only Program Coordinators / Tech Admins can edit training — it's meant to come from Events attendance.</p>`
+      : '';
+    return `<div class="${cls}"><span class="mf-label">${label}</span><span class="mf-value">${viewValueHtml}</span>${lockedNote}</div>`;
   }
   return `
     <div class="${cls}">
@@ -1342,7 +1360,16 @@ function renderPersonModal(){
         await persistClasses(pending);
         await persistSafeEnvironment(pending);
         await persistRoles(pending);
-        await persistTraining(pending);
+        // Only Program Coordinators / Tech Admins can edit training (it's
+        // meant to flow from Events attendance, not free-text edits) — the
+        // field is locked out of edit mode for everyone else, so there's
+        // nothing to persist and attempting it would just fail on RLS and
+        // wrongly abort an otherwise-successful save.
+        if(currentCoordinator && currentCoordinator.unrestricted){
+          await persistTraining(pending);
+        } else {
+          pending.catecheticalTraining = p.catecheticalTraining;
+        }
       }catch(e){
         console.error('Save failed', e);
         alert('Save failed: ' + e.message + '\n\nYour changes were NOT saved. You may need to log in again, or your account may no longer be a Class Coordinator. Staying in edit mode so you can retry.');
