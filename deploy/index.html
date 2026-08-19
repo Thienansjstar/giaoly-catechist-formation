@@ -305,28 +305,6 @@
     color:var(--navy);
   }
   .roster-search:focus{outline:2px solid var(--gold-soft);outline-offset:1px;}
-  .roster-sort-row{
-    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-    margin-bottom:14px;
-  }
-  .roster-sort-label{font-size:13px;color:var(--navy-45);font-weight:600;}
-  .roster-sort-btn{
-    background:var(--white);
-    border:1px solid var(--line);
-    border-radius:999px;
-    padding:6px 14px;
-    font-size:13px;
-    font-family:'Inter',sans-serif;
-    color:var(--navy);
-    cursor:pointer;
-  }
-  .roster-sort-btn:hover{background:var(--gold-soft)33;}
-  .roster-sort-btn.active{
-    background:var(--navy);
-    border-color:var(--navy);
-    color:#fff;
-    font-weight:600;
-  }
   .roster-table-wrap{
     max-height:460px;overflow-y:auto;overflow-x:auto;
     border-top:1px solid var(--line);
@@ -1524,11 +1502,6 @@ const rosterColumns = [
   {key:'catecheticalTraining', label:'Catechetical Training'}
 ];
 
-const SORT_BUTTONS = [
-  {key:'name', label:'Name'},
-  {key:'class', label:'Class'},
-];
-
 function rosterFor(role){
   return PEOPLE.filter(p => p.roles.includes(role));
 }
@@ -1543,10 +1516,6 @@ function rosterPanel(f){
       <div class="roster-count-badge"><b>${roster.length}</b> registered as ${escapeHtml(f.role)}</div>
       <input type="text" class="roster-search" placeholder="Search names or class…">
     </div>
-    <div class="roster-sort-row">
-      <span class="roster-sort-label">Sort by:</span>
-      ${SORT_BUTTONS.map(s => `<button type="button" class="roster-sort-btn" data-key="${s.key}">${s.label}</button>`).join('')}
-    </div>
     <div class="roster-table-wrap">
       <table class="roster-table"></table>
     </div>
@@ -1559,7 +1528,6 @@ function buildRosterTable(container, roster){
   const searchInput = container.querySelector('.roster-search');
   const table = container.querySelector('.roster-table');
   const noResults = container.querySelector('.roster-noresults');
-  const sortBtns = container.querySelectorAll('.roster-sort-btn');
   if(!table) return;
 
   function setSort(key){
@@ -1569,13 +1537,6 @@ function buildRosterTable(container, roster){
   }
 
   function render(){
-    sortBtns.forEach(btn => {
-      const isActive = state.sortKey === btn.dataset.key;
-      btn.classList.toggle('active', isActive);
-      btn.textContent = SORT_BUTTONS.find(s => s.key === btn.dataset.key).label
-        + (isActive ? (state.sortDir === -1 ? ' ▼' : ' ▲') : '');
-    });
-
     const theadRow = rosterColumns.map(c => `
       <th data-key="${c.key}" class="${state.sortKey===c.key?'sorted':''}">
         ${c.label}<span class="sort-arrow">${state.sortKey===c.key && state.sortDir===-1 ? '▼' : '▲'}</span>
@@ -1625,10 +1586,6 @@ function buildRosterTable(container, roster){
       });
     });
   }
-
-  sortBtns.forEach(btn => {
-    btn.addEventListener('click', () => setSort(btn.dataset.key));
-  });
 
   if(searchInput){
     searchInput.addEventListener('input', () => {
