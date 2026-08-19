@@ -836,9 +836,13 @@ async function refreshAuthState(){
   await setCurrentCoordinator(data && data.session);
 }
 
-supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+supabaseClient.auth.onAuthStateChange(async (event, session) => {
   await setCurrentCoordinator(session);
   if(typeof renderStage === 'function' && PEOPLE.length) renderStage();
+  if(event === 'PASSWORD_RECOVERY'){
+    renderAuthModal('newPassword');
+    document.getElementById('authModalOverlay').classList.add('open');
+  }
 });
 
 function openAuthModal(mode){
@@ -852,6 +856,98 @@ function closeAuthModal(){
 function renderAuthModal(mode, message){
   const content = document.getElementById('authModalContent');
   const isSignup = mode === 'signup';
+  const isReset = mode === 'reset';
+  const isNewPassword = mode === 'newPassword';
+
+  if(isReset){
+    content.innerHTML = `
+      <div class="modal-eyebrow">Admin Access Only</div>
+      <h3 class="modal-name serif">Reset Password</h3>
+      <p class="edit-note">Enter your admin email and we'll send you a link to reset your password.</p>
+      <div class="edit-password-box">
+        <div class="edit-add-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+          <input type="email" id="authEmailInput" placeholder="Email" class="roster-search" autocomplete="email">
+        </div>
+        ${message ? `<p class="edit-error">${escapeHtml(message)}</p>` : ''}
+        <div class="edit-password-row" style="margin-top:12px;">
+          <button class="edit-btn edit-btn-primary" id="authSubmitBtn">Send Reset Link</button>
+          <button class="edit-btn" id="authCancelBtn">Cancel</button>
+        </div>
+        <p class="edit-note" style="margin-top:10px;">
+          Remembered your password? <a href="#" id="authSwitchLink">Log in</a>
+        </p>
+      </div>
+    `;
+    document.getElementById('authSwitchLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      renderAuthModal('signin');
+    });
+    document.getElementById('authCancelBtn').addEventListener('click', closeAuthModal);
+    const submitBtn = document.getElementById('authSubmitBtn');
+    const doSubmit = async () => {
+      const email = document.getElementById('authEmailInput').value.trim();
+      if(!email){
+        renderAuthModal('reset', 'Enter your email.');
+        return;
+      }
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending…';
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.href.split('#')[0],
+      });
+      if(error){
+        renderAuthModal('reset', 'Could not send reset link: ' + error.message);
+        return;
+      }
+      renderAuthModal('signin');
+      showToast('If that email has an admin account, a reset link is on its way.');
+    };
+    submitBtn.addEventListener('click', doSubmit);
+    content.querySelectorAll('input').forEach(el => {
+      el.addEventListener('keydown', (e) => { if(e.key === 'Enter') doSubmit(); });
+    });
+    return;
+  }
+
+  if(isNewPassword){
+    content.innerHTML = `
+      <div class="modal-eyebrow">Admin Access Only</div>
+      <h3 class="modal-name serif">Set a New Password</h3>
+      <p class="edit-note">Choose a new password for your admin account.</p>
+      <div class="edit-password-box">
+        <div class="edit-add-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+          <input type="password" id="authPasswordInput" placeholder="New password" class="roster-search" autocomplete="new-password">
+        </div>
+        ${message ? `<p class="edit-error">${escapeHtml(message)}</p>` : ''}
+        <div class="edit-password-row" style="margin-top:12px;">
+          <button class="edit-btn edit-btn-primary" id="authSubmitBtn">Save Password</button>
+        </div>
+      </div>
+    `;
+    const submitBtn = document.getElementById('authSubmitBtn');
+    const doSubmit = async () => {
+      const password = document.getElementById('authPasswordInput').value;
+      if(!password){
+        renderAuthModal('newPassword', 'Enter a new password.');
+        return;
+      }
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving…';
+      const { error } = await supabaseClient.auth.updateUser({ password });
+      if(error){
+        renderAuthModal('newPassword', 'Could not update password: ' + error.message);
+        return;
+      }
+      closeAuthModal();
+      showToast('Password updated — you are signed in.');
+    };
+    submitBtn.addEventListener('click', doSubmit);
+    content.querySelectorAll('input').forEach(el => {
+      el.addEventListener('keydown', (e) => { if(e.key === 'Enter') doSubmit(); });
+    });
+    return;
+  }
+
   content.innerHTML = `
     <div class="modal-eyebrow">Admin Access Only</div>
     <h3 class="modal-name serif">${isSignup ? 'Create Admin Account' : 'Admin Log In'}</h3>
@@ -871,7 +967,7 @@ function renderAuthModal(mode, message){
       <p class="edit-note" style="margin-top:10px;">
         ${isSignup
           ? `Already have an account? <a href="#" id="authSwitchLink">Log in</a>`
-          : `New admin? <a href="#" id="authSwitchLink">Create an account</a>`}
+          : `New admin? <a href="#" id="authSwitchLink">Create an account</a> &nbsp;·&nbsp; <a href="#" id="authForgotLink">Forgot password?</a>`}
       </p>
     </div>
   `;
@@ -881,6 +977,13 @@ function renderAuthModal(mode, message){
     renderAuthModal(isSignup ? 'signin' : 'signup');
   });
   document.getElementById('authCancelBtn').addEventListener('click', closeAuthModal);
+  const forgotLink = document.getElementById('authForgotLink');
+  if(forgotLink){
+    forgotLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      renderAuthModal('reset');
+    });
+  }
 
   const submitBtn = document.getElementById('authSubmitBtn');
   const doSubmit = async () => {
