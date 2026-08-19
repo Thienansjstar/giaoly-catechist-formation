@@ -1519,7 +1519,6 @@ function naturalCompare(a, b){
 
 const rosterColumns = [
   {key:'name', label:'Name'},
-  {key:'giaoLyRole', label:'Giao Ly Role'},
   {key:'class', label:'Class'},
   {key:'safeEnvironment', label:'Safe Environment'},
   {key:'catecheticalTraining', label:'Catechetical Training'}
@@ -1528,16 +1527,20 @@ const rosterColumns = [
 const SORT_BUTTONS = [
   {key:'name', label:'Name'},
   {key:'class', label:'Class'},
-  {key:'giaoLyRole', label:'Role'},
 ];
 
-function rosterPanel(){
-  if(!PEOPLE.length){
-    return `<div class="roster-empty">No one is on the roster yet.</div>`;
+function rosterFor(role){
+  return PEOPLE.filter(p => p.roles.includes(role));
+}
+
+function rosterPanel(f){
+  const roster = rosterFor(f.role);
+  if(!roster.length){
+    return `<div class="roster-empty">No one on the roster is currently registered as ${escapeHtml(f.role)}.</div>`;
   }
   return `
     <div class="roster-top">
-      <div class="roster-count-badge"><b>${PEOPLE.length}</b> on the roster</div>
+      <div class="roster-count-badge"><b>${roster.length}</b> registered as ${escapeHtml(f.role)}</div>
       <input type="text" class="roster-search" placeholder="Search names or class…">
     </div>
     <div class="roster-sort-row">
@@ -1602,7 +1605,6 @@ function buildRosterTable(container, roster){
     const tbodyRows = rows.map(p => `
       <tr>
         <td class="col-name"><button class="name-btn" data-num="${p.num}">${escapeHtml(p.name)}</button></td>
-        <td>${roleListHtml(p.giaoLyRole)}</td>
         <td>${escapeHtml(p.class) || '—'}</td>
         <td>${safeEnvBadgeHtml(p.safeEnvironment)}</td>
         <td class="col-training">${trainingListHtml(p.catecheticalTraining)}</td>
@@ -1839,7 +1841,7 @@ function renderStage(){
     being: beingPanel(f),
     knowing: knowingPanel(f),
     serving: servingPanel(f),
-    roster: rosterPanel(),
+    roster: rosterPanel(f),
     events: eventsPanel()
   };
   tabDefs.forEach(t => {
@@ -1847,12 +1849,12 @@ function renderStage(){
     el.innerHTML = panelMap[t.key];
   });
 
-  // wire up roster table (panel exists in DOM even when hidden) — the
-  // roster is general: everyone, regardless of which stage/role is
-  // currently selected above.
+  // wire up roster table (panel exists in DOM even when hidden) — scoped
+  // to whichever role is currently selected via the branch picture.
   const rosterContainer = tabPanels.querySelector('[data-key="roster"]');
-  if(rosterContainer && PEOPLE.length){
-    buildRosterTable(rosterContainer, PEOPLE);
+  const roster = rosterFor(f.role);
+  if(rosterContainer && roster.length){
+    buildRosterTable(rosterContainer, roster);
   }
 
   // events is likewise general, not tied to the currently selected stage.
@@ -1869,7 +1871,6 @@ function renderStage(){
 
 function selectRole(role){
   currentRole = role;
-  currentTab = 'responsibilities';
   renderStage();
   document.querySelector('.stage-wrap').scrollIntoView({behavior:'smooth', block:'start'});
 }
