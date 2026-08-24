@@ -1140,17 +1140,6 @@ async function persistTraining(p){
   }
 }
 
-function computeAge(birthDateStr){
-  if(!birthDateStr) return null;
-  const bd = new Date(birthDateStr + 'T00:00:00');
-  if(isNaN(bd.getTime())) return null;
-  const now = new Date();
-  let age = now.getFullYear() - bd.getFullYear();
-  const monthDiff = now.getMonth() - bd.getMonth();
-  if(monthDiff < 0 || (monthDiff === 0 && now.getDate() < bd.getDate())) age--;
-  return age;
-}
-
 async function loadPeopleFromSupabase(){
   const { data, error } = await supabaseClient
     .from('people')
@@ -1167,8 +1156,6 @@ async function loadPeopleFromSupabase(){
       middle: row.middle_name,
       last: row.last_name,
       name: [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' '),
-      birthDate: null,
-      age: null,
       giaoLyRole: roles.join(', '),
       roles,
       classes,
@@ -1343,8 +1330,6 @@ function renderPersonModal(){
     </div>
     ${modalMode === 'edit' ? `<p class="edit-note">Editing all fields below — changes are shared and visible to everyone.</p>` : ''}
     <div class="modal-grid">
-      <div class="modal-field"><span class="mf-label">Age</span><span class="mf-value">${p.age ?? '—'}</span></div>
-      <div class="modal-field"><span class="mf-label">Birth Date</span><span class="mf-value">${p.birthDate ?? '—'}</span></div>
       <div class="modal-field"><span class="mf-label">Years of Experience</span><span class="mf-value">${escapeHtml(p.yearsExperience) || '—'}</span></div>
       ${fieldBlockHtml('classes', 'Class', escapeHtml(p.class) || '—', true)}
       ${fieldBlockHtml('safeEnvironment', 'Safe Environment', safeEnvBadgeHtml(p.safeEnvironment), false)}
