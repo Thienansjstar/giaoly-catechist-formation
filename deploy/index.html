@@ -1154,7 +1154,7 @@ function computeAge(birthDateStr){
 async function loadPeopleFromSupabase(){
   const { data, error } = await supabaseClient
     .from('people')
-    .select('id, legacy_num, first_name, middle_name, last_name, birth_date, safe_environment, years_experience, person_roles(roles(name)), person_training(training_title), class_assignments(class)')
+    .select('id, legacy_num, first_name, middle_name, last_name, safe_environment, years_experience, person_roles(roles(name)), person_training(training_title), class_assignments(class)')
     .order('legacy_num');
   if(error || !data){ console.error('Could not load roster from Supabase', error); return; }
   PEOPLE = data.map(row => {
@@ -1167,8 +1167,8 @@ async function loadPeopleFromSupabase(){
       middle: row.middle_name,
       last: row.last_name,
       name: [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' '),
-      birthDate: row.birth_date,
-      age: computeAge(row.birth_date),
+      birthDate: null,
+      age: null,
       giaoLyRole: roles.join(', '),
       roles,
       classes,
