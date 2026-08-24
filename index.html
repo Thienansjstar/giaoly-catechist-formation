@@ -1067,7 +1067,7 @@ function roleListHtml(giaoLyRole){
 function trainingListHtml(training){
   if(!training || !training.length) return `<span class="mf-empty">No training recorded yet</span>`;
   const n = training.length;
-  return `<details class="training-details"><summary>${n} training${n===1?'':'s'}</summary><ul class="role-list">${training.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul></details>`;
+  return `<details class="training-details"><summary>${n} Training${n===1?'':'s'}</summary><ul class="role-list">${training.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul></details>`;
 }
 function safeEnvBadgeHtml(val){
   const isYes = String(val).trim().toLowerCase() === 'yes';
