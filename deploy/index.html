@@ -1154,7 +1154,7 @@ function computeAge(birthDateStr){
 async function loadPeopleFromSupabase(){
   const { data, error } = await supabaseClient
     .from('people')
-    .select('id, legacy_num, first_name, middle_name, last_name, birth_date, safe_environment, person_roles(roles(name)), person_training(training_title), class_assignments(class)')
+    .select('id, legacy_num, first_name, middle_name, last_name, birth_date, safe_environment, years_experience, person_roles(roles(name)), person_training(training_title), class_assignments(class)')
     .order('legacy_num');
   if(error || !data){ console.error('Could not load roster from Supabase', error); return; }
   PEOPLE = data.map(row => {
@@ -1175,6 +1175,7 @@ async function loadPeopleFromSupabase(){
       class: classes.join(', '),
       catecheticalTraining: (row.person_training || []).map(t => t.training_title),
       safeEnvironment: row.safe_environment ? 'Yes' : 'No',
+      yearsExperience: row.years_experience,
     };
   });
 }
@@ -1344,6 +1345,7 @@ function renderPersonModal(){
     <div class="modal-grid">
       <div class="modal-field"><span class="mf-label">Age</span><span class="mf-value">${p.age ?? '—'}</span></div>
       <div class="modal-field"><span class="mf-label">Birth Date</span><span class="mf-value">${p.birthDate ?? '—'}</span></div>
+      <div class="modal-field"><span class="mf-label">Years of Experience</span><span class="mf-value">${escapeHtml(p.yearsExperience) || '—'}</span></div>
       ${fieldBlockHtml('classes', 'Class', escapeHtml(p.class) || '—', true)}
       ${fieldBlockHtml('safeEnvironment', 'Safe Environment', safeEnvBadgeHtml(p.safeEnvironment), false)}
       ${fieldBlockHtml('giaoLyRole', 'Giao Ly Role', roleListHtml(p.giaoLyRole), true)}
@@ -1601,6 +1603,7 @@ function naturalCompare(a, b){
 const rosterColumns = [
   {key:'name', label:'Name'},
   {key:'class', label:'Class'},
+  {key:'yearsExperience', label:'Years of Experience'},
   {key:'safeEnvironment', label:'Safe Environment'},
   {key:'catecheticalTraining', label:'Catechetical Training'}
 ];
@@ -1670,6 +1673,7 @@ function buildRosterTable(container, roster){
       <tr>
         <td class="col-name"><button class="name-btn" data-num="${p.num}">${escapeHtml(p.name)}</button></td>
         <td>${escapeHtml(p.class) || '—'}</td>
+        <td>${escapeHtml(p.yearsExperience) || '—'}</td>
         <td>${safeEnvBadgeHtml(p.safeEnvironment)}</td>
         <td class="col-training">${trainingListHtml(p.catecheticalTraining)}</td>
       </tr>`).join('');
