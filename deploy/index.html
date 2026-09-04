@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Catechist's Path — Giáo Lý Formation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -25,6 +26,19 @@
     --radius: 16px;
   }
   *{box-sizing:border-box;}
+  .fatal-error{
+    display:none;
+    background:var(--maroon);
+    color:var(--white);
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    font-weight:500;
+    line-height:1.5;
+    padding:12px 24px;
+    text-align:center;
+    position:relative;
+    z-index:9999;
+  }
   html{scroll-behavior:smooth;}
   body{
     margin:0;
@@ -749,11 +763,15 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.114.0/dist/umd/supabase.js"
+        integrity="sha384-UxmVkfpcoSCBn4QrHwxxZVlCbloMpP/2Ay2ByWcNy6TcMxC3JUgqa8Geipyl0tP7"
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 const SUPABASE_URL = 'https://lrrmasbimmzfgkbqvsae.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_MvfKhtjQbC02X2DsOt5Fow_HFqAP1Sw';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = (typeof supabase !== 'undefined' && supabase && supabase.createClient)
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null; // SDK blocked, offline, or failed its integrity check — init() reports this.
 
 const ROLE_SLUGS = {
   'Assistant Catechist': 'assistant_catechist',
@@ -768,6 +786,26 @@ const UNRESTRICTED_ROLES = ['Program Coordinator', 'Tech Admin'];
 
 let currentCoordinator = null; // { id, email } once signed in as a Class Coordinator
 let toastTimer = null;
+
+// Shows a persistent, visible banner. Used for failures the user cannot act
+// past (no SDK, no network) — as opposed to showToast, which fades.
+function showFatalError(message){
+  let bar = document.getElementById('fatalError');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'fatalError';
+    bar.className = 'fatal-error';
+    bar.setAttribute('role','alert');
+    document.body.prepend(bar);
+  }
+  bar.textContent = message;
+  bar.style.display = 'block';
+}
+
+function clearFatalError(){
+  const bar = document.getElementById('fatalError');
+  if(bar) bar.style.display = 'none';
+}
 
 function showToast(message){
   const toast = document.getElementById('toast');
@@ -1145,7 +1183,10 @@ async function loadPeopleFromSupabase(){
     .from('people')
     .select('id, legacy_num, first_name, middle_name, last_name, safe_environment, years_experience, person_roles(roles(name)), person_training(training_title), class_assignments(class)')
     .order('legacy_num');
-  if(error || !data){ console.error('Could not load roster from Supabase', error); return; }
+  if(error || !data){
+    console.error('Could not load roster from Supabase', error);
+    throw new Error('roster-load-failed');
+  }
   PEOPLE = data.map(row => {
     const roles = (row.person_roles || []).map(pr => pr.roles && pr.roles.name).filter(Boolean);
     const classes = (row.class_assignments || []).map(c => c.class).sort(naturalCompare);
@@ -1929,11 +1970,40 @@ function selectTab(key){
 }
 
 (async function init(){
-  await refreshAuthState();
-  await loadPeopleFromSupabase();
-  await loadEvents();
+  if(!supabaseClient){
+    showFatalError('Could not load a required script. Check your connection, then reload. If this persists, the site may be blocked by a network filter.');
+    renderStage(); // static formation content still renders without data
+    return;
+  }
+  try {
+    await refreshAuthState();
+  } catch (err) {
+    // A bad stored session must not take the whole page down; carry on signed out.
+    console.error('Could not restore session', err);
+  }
+  // Roster and events are independent — fetch concurrently rather than serially.
+  const [rosterResult, eventsResult] = await Promise.allSettled([
+    loadPeopleFromSupabase(),
+    loadEvents(),
+  ]);
+  if(rosterResult.status === 'rejected'){
+    console.error('Roster failed to load', rosterResult.reason);
+    showFatalError('The roster could not be loaded right now. This is a connection problem, not missing data — please reload in a moment.');
+  } else {
+    clearFatalError();
+  }
+  if(eventsResult.status === 'rejected'){
+    // Non-fatal: the roster is the primary content, trainings are secondary.
+    console.error('Training events failed to load', eventsResult.reason);
+    showToast('Training events could not be loaded.');
+  }
   renderStage();
 })();
+
+// Surface anything that escapes a handler instead of failing silently.
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('Unhandled promise rejection', e.reason);
+});
 </script>
 </body>
 </html>

@@ -1,0 +1,15 @@
+# Netlify build config.
+#
+# `deploy/` is the publish directory and is GENERATED — the app source of truth
+# is ./index.html at the repo root. The build step copies it so the two can no
+# longer drift apart by hand. Do not edit deploy/index.html directly.
+#
+# Publishing `deploy/` rather than the repo root is deliberate: it keeps the
+# roster spreadsheets and supabase/ migrations out of the deployed bundle.
+
+[build]
+  publish = "deploy"
+  command = "cp index.html deploy/index.html"
+
+# Security + cache headers live in deploy/_headers rather than here, so they
+# apply to CLI and drag-and-drop deploys too, not only git-triggered builds.
