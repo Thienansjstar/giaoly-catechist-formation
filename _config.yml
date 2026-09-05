@@ -1,0 +1,17 @@
+# GitHub Pages serves this repo from the root, which means every file in it
+# is published, not just the app. That put supabase/migrations/*.sql -- the
+# complete authorization model, RLS policies and coordinator logic -- on the
+# live site at a guessable path, along with the host config files.
+#
+# The repo is public, so this is not the only way to read them, but the live
+# site has no business serving them. Publish the app and nothing else.
+exclude:
+  - supabase/
+  - deploy/
+  - netlify.toml
+  - _config.yml
+  - "*.xlsx"
+  - "~$*.xlsx"
+  - .claude/
+  - .github/
+  - .gitignore
