@@ -242,16 +242,16 @@
   @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
   .resp-cols{
-    columns:2;column-gap:44px;
     list-style:none;margin:0;padding:0;
+    max-width:760px;
   }
   .resp-cols li{
-    break-inside:avoid;
     display:flex;gap:12px;
     font-size:15px;line-height:1.6;
     color:var(--navy-70);
-    margin-bottom:18px;
+    margin-bottom:14px;
   }
+  .resp-cols li:last-child{margin-bottom:0;}
   .resp-cols li::before{
     content:'◆';
     color:var(--bullet);
@@ -266,14 +266,14 @@
     font-weight:700;font-size:15px;color:var(--navy);
     margin-bottom:10px;line-height:1.4;
   }
-  .know-list{list-style:none;margin:0;padding:0;columns:2;column-gap:44px;}
+  .know-list{list-style:none;margin:0;padding:0;max-width:760px;}
   .know-list li{
-    break-inside:avoid;
     display:flex;gap:12px;
     font-size:14.5px;line-height:1.6;
     color:var(--navy-70);
     margin-bottom:10px;
   }
+  .know-list li:last-child{margin-bottom:0;}
   .know-list li::before{content:'◆';color:var(--bullet);font-size:8px;line-height:2;flex-shrink:0;}
   .know-empty{font-size:14px;color:var(--navy-45);font-style:italic;}
 
@@ -291,12 +291,13 @@
     font-size:11px;text-transform:uppercase;letter-spacing:.08em;
     color:var(--gold);margin-bottom:4px;
   }
-  .habits-list{list-style:none;margin:0;padding:0;columns:2;column-gap:44px;}
+  .habits-list{list-style:none;margin:0;padding:0;max-width:760px;}
   .habits-list li{
-    break-inside:avoid;
     font-size:14.5px;line-height:1.7;color:var(--navy-70);
     display:flex;gap:10px;
+    margin-bottom:8px;
   }
+  .habits-list li:last-child{margin-bottom:0;}
   .habits-list li::before{content:'◆';color:var(--bullet);font-size:8px;line-height:2.1;flex-shrink:0;}
 
   /* roster tab */
@@ -659,7 +660,6 @@
   @media(max-width:860px){
     .path-desktop{display:none;}
     .path-mobile{display:block;}
-    .resp-cols, .know-list, .habits-list{columns:1;}
     .hero-inner{flex-direction:column;align-items:center;}
     .crest{display:none;}
     .stage-head{flex-direction:column;}
