@@ -1,0 +1,72 @@
+name: Deploy to Azure Static Web Apps
+
+# Mirrors what netlify.toml does today, so both hosts stay byte-identical
+# while the migration is in progress. Remove the Netlify side once Azure is
+# confirmed good.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+# Exposed so the deploy steps can skip cleanly before the Azure resource
+# exists, rather than failing the run on a missing secret.
+env:
+  SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+
+jobs:
+  build_and_deploy:
+    if: github.event_name == 'push' || github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    name: Build and deploy
+    steps:
+      - uses: actions/checkout@v4
+
+      # deploy/ is a build output, not a second source file. Regenerating it
+      # here is what stops it drifting from index.html by hand.
+      - name: Sync deploy/ from source
+        run: |
+          cp index.html deploy/index.html
+          echo "deploy/index.html regenerated from source ($(wc -c < deploy/index.html) bytes)"
+
+      # Fail loudly rather than shipping a page with no security headers.
+      - name: Verify security headers config is present and valid
+        run: |
+          test -f deploy/staticwebapp.config.json
+          python3 -c "import json,sys; c=json.load(open('deploy/staticwebapp.config.json'))['globalHeaders']; \
+            req=['Content-Security-Policy','Strict-Transport-Security','X-Content-Type-Options','X-Frame-Options','Referrer-Policy']; \
+            missing=[h for h in req if h not in c]; \
+            sys.exit('Missing headers: '+', '.join(missing)) if missing else print('headers OK')"
+
+      - name: Waiting for Azure resource
+        if: env.SWA_TOKEN == ''
+        run: echo "AZURE_STATIC_WEB_APPS_API_TOKEN not set yet - skipping deploy. Create the Static Web App, then re-run."
+
+      - name: Deploy
+        if: env.SWA_TOKEN != ''
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: "deploy"      # NOT "/" — the repo root would publish supabase/migrations
+          output_location: ""
+          skip_app_build: true
+          skip_api_build: true
+
+  close_pull_request:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close staging environment
+    steps:
+      - uses: Azure/static-web-apps-deploy@v1
+        if: env.SWA_TOKEN != ''
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: close
