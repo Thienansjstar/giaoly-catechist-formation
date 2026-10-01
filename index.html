@@ -653,6 +653,70 @@
   .training-details .role-list{margin-left:2px;}
   .roster-empty{font-size:14px;color:var(--navy-45);font-style:italic;padding:14px 2px;}
 
+  /* ===================== ALL-CATECHISTS DIRECTORY ===================== */
+  /* Sits under the last path node (Catechist Mentor, at x:88% of the wrap). */
+  .path-cta{position:relative;max-width:1040px;margin:16px auto 0;height:44px;}
+  .directory-btn{
+    all:unset;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;font-weight:700;font-size:11.5px;
+    letter-spacing:.07em;text-transform:uppercase;
+    color:var(--maroon);
+    background:var(--card-2);
+    border:1px solid var(--gold);
+    border-radius:999px;
+    padding:9px 18px;
+    white-space:nowrap;
+    box-shadow:0 2px 6px rgba(44,42,85,0.10);
+  }
+  .directory-btn:hover{background:var(--gold-soft)33;}
+  .directory-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  .path-cta .directory-btn{position:absolute;left:88%;top:0;transform:translateX(-50%);}
+  @media(max-width:860px){
+    .path-cta{height:auto;margin:18px 0 0;display:flex;justify-content:center;}
+    .path-cta .directory-btn{position:static;transform:none;}
+  }
+  .modal-overlay-top{z-index:102;}
+  .dir-list{
+    max-height:52vh;overflow-y:auto;
+    border-top:1px solid var(--line);
+  }
+  .dir-row{
+    display:flex;align-items:center;gap:10px;
+    padding:4px 2px;
+    border-bottom:1px solid var(--line);
+  }
+  .dir-row-name{
+    all:unset;cursor:pointer;flex:1;min-width:0;
+    font-size:14.5px;font-weight:500;color:var(--navy);
+    padding:8px;border-radius:6px;
+  }
+  .dir-row-name:hover{background:var(--gold-soft)55;color:var(--maroon);}
+  .dir-row-name:focus-visible{outline:2px solid var(--gold);outline-offset:-2px;}
+  .dir-row-class{font-size:12px;color:var(--navy-45);white-space:nowrap;}
+  .dir-delete-btn{
+    all:unset;cursor:pointer;flex-shrink:0;
+    color:var(--maroon);font-size:13px;line-height:1;
+    border:1px solid #e9cfca;border-radius:6px;
+    padding:5px 9px;
+  }
+  .dir-delete-btn:hover{background:#f5e2df;}
+  .dir-delete-btn:focus-visible{outline:2px solid var(--maroon);outline-offset:1px;}
+  .dir-confirm{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:12px 10px;
+    border-bottom:1px solid var(--line);
+    background:#f9efed;
+  }
+  .dir-confirm-text{flex:1;min-width:200px;font-size:13.5px;color:var(--navy-70);line-height:1.5;}
+  .edit-btn-danger{background:var(--maroon);color:var(--white);border-color:var(--maroon);}
+  .edit-btn-danger:hover{background:#6d2230;border-color:#6d2230;}
+  .add-form-grid{display:flex;flex-direction:column;gap:14px;}
+  .add-field{display:flex;flex-direction:column;gap:5px;}
+  .add-field-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .add-field-row .add-field{flex:1;min-width:130px;}
+  .add-field .roster-search{min-width:0;width:100%;box-sizing:border-box;}
+
   /* ===================== FOOTER ===================== */
   footer{padding:0 0 60px;text-align:center;}
   footer p{font-size:12px;color:var(--navy-45);letter-spacing:.04em;}
@@ -705,6 +769,11 @@
 
     <!-- Mobile stacked list -->
     <div class="path-mobile" id="pathNodesMobile"></div>
+
+    <!-- Opens the full roster directory (all catechists, every role) -->
+    <div class="path-cta">
+      <button type="button" class="directory-btn" id="openDirectoryBtn">View All Catechists</button>
+    </div>
   </div>
 </div>
 
@@ -731,6 +800,22 @@
     <p>THE CATECHIST'S PATH — GIÁO LÝ CATECHIST FORMATION FRAMEWORK &amp; 2026 ROSTER</p>
   </div>
 </footer>
+
+<!-- Directory sits BEFORE the person modal in the DOM so the person detail
+     modal paints on top of it when a name in the list is clicked. -->
+<div class="modal-overlay" id="directoryModalOverlay">
+  <div class="modal-box modal-box-wide" id="directoryModalBox" role="dialog" aria-modal="true">
+    <button class="modal-close" id="directoryModalClose" aria-label="Close">&times;</button>
+    <div id="directoryModalContent"></div>
+  </div>
+</div>
+
+<div class="modal-overlay modal-overlay-top" id="addPersonModalOverlay">
+  <div class="modal-box modal-box-wide" id="addPersonModalBox" role="dialog" aria-modal="true">
+    <button class="modal-close" id="addPersonModalClose" aria-label="Close">&times;</button>
+    <div id="addPersonModalContent"></div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="personModalOverlay">
   <div class="modal-box" id="personModalBox" role="dialog" aria-modal="true">
@@ -840,13 +925,15 @@ function updateLoginButton(){
 async function loadCoordinatorInfo(userId){
   const { data, error } = await supabaseClient
     .from('people')
-    .select('class_assignments(class), person_roles(roles(name))')
+    .select('id, class_assignments(class), person_roles(roles(name))')
     .eq('auth_user_id', userId)
     .maybeSingle();
-  if(error || !data) return { classes: [], unrestricted: false };
+  if(error || !data) return { personId: null, classes: [], roles: [], unrestricted: false };
   const roleNames = (data.person_roles || []).map(pr => pr.roles && pr.roles.name).filter(Boolean);
   return {
+    personId: data.id,
     classes: (data.class_assignments || []).map(c => c.class),
+    roles: roleNames,
     unrestricted: roleNames.some(r => UNRESTRICTED_ROLES.includes(r)),
   };
 }
@@ -857,7 +944,7 @@ async function setCurrentCoordinator(session){
     updateLoginButton();
     return;
   }
-  currentCoordinator = { id: session.user.id, email: session.user.email, classes: [], unrestricted: false };
+  currentCoordinator = { id: session.user.id, email: session.user.email, personId: null, classes: [], roles: [], unrestricted: false };
   updateLoginButton();
   Object.assign(currentCoordinator, await loadCoordinatorInfo(session.user.id));
 }
@@ -877,6 +964,8 @@ async function refreshAuthState(){
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
   await setCurrentCoordinator(session);
   if(typeof renderStage === 'function' && PEOPLE.length) renderStage();
+  const dirOverlay = document.getElementById('directoryModalOverlay');
+  if(dirOverlay && dirOverlay.classList.contains('open')) renderDirectoryModal();
   if(event === 'PASSWORD_RECOVERY'){
     renderAuthModal('newPassword');
     document.getElementById('authModalOverlay').classList.add('open');
@@ -1497,6 +1586,9 @@ function renderPersonModal(){
       modalMode = 'view';
       renderPersonModal();
       renderStage();
+      // The directory may be open underneath, showing this person's class.
+      const dirOverlay = document.getElementById('directoryModalOverlay');
+      if(dirOverlay && dirOverlay.classList.contains('open')) renderDirectoryModal();
     });
     if(cancelEditBtn) cancelEditBtn.addEventListener('click', () => { modalMode = 'view'; renderPersonModal(); });
   }
@@ -1517,7 +1609,15 @@ personModalOverlay.addEventListener('click', (e) => {
   if(e.target === personModalOverlay) closePersonModal();
 });
 document.addEventListener('keydown', (e) => {
-  if(e.key === 'Escape'){ closePersonModal(); closeEventModal(); }
+  if(e.key !== 'Escape') return;
+  const isOpen = (id) => {
+    const el = document.getElementById(id);
+    return el && el.classList.contains('open');
+  };
+  if(isOpen('addPersonModalOverlay')){ closeAddPersonModal(); return; }
+  if(isOpen('personModalOverlay')){ closePersonModal(); return; }
+  if(isOpen('eventModalOverlay')){ closeEventModal(); return; }
+  if(isOpen('directoryModalOverlay')) closeDirectoryModal();
 });
 
 // ---------------- PATH NODES ----------------
@@ -1913,6 +2013,355 @@ function renderEventModal(){
 document.getElementById('eventModalClose').addEventListener('click', closeEventModal);
 document.getElementById('eventModalOverlay').addEventListener('click', (e) => {
   if(e.target === document.getElementById('eventModalOverlay')) closeEventModal();
+});
+
+// ---------------- ALL-CATECHISTS DIRECTORY (add / delete, Tech Admin only) ----------------
+// Adding and removing people is gated to Tech Admin in the UI; the database
+// gates it too (can_edit_person -> has_unrestricted_access), so a hidden
+// button is a convenience, not the security boundary.
+let directoryQuery = '';
+let directoryPendingDeleteId = null; // person.id whose confirm row is showing
+
+function isTechAdmin(){
+  return !!(currentCoordinator && (currentCoordinator.roles || []).includes('Tech Admin'));
+}
+
+function splitList(value){
+  return [...new Set(String(value || '').split(',').map(s => s.trim()).filter(Boolean))];
+}
+
+function nextLegacyNum(){
+  return PEOPLE.reduce((max, p) => Math.max(max, Number(p.num) || 0), 0) + 1;
+}
+
+async function createPerson(fields){
+  const legacyNum = nextLegacyNum();
+  const { data, error } = await supabaseClient
+    .from('people')
+    .insert({
+      legacy_num: legacyNum,
+      first_name: fields.first,
+      middle_name: fields.middle || null,
+      last_name: fields.last,
+      safe_environment: fields.safeEnvironment === 'Yes',
+      years_experience: fields.yearsExperience || null,
+    })
+    .select('id')
+    .single();
+  if(error || !data) throw new PersistError('Add catechist: ' + (error ? error.message : 'no row returned'));
+
+  const personId = data.id;
+  try{
+    if(fields.classes.length){
+      const { error: clsErr } = await supabaseClient
+        .from('class_assignments')
+        .insert(fields.classes.map(cls => ({ person_id: personId, class: cls })));
+      assertNoError(clsErr, 'Add classes');
+    }
+    const roleIds = fields.roles.map(r => ROLE_SLUGS[r]).filter(Boolean);
+    if(roleIds.length){
+      const { error: roleErr } = await supabaseClient
+        .from('person_roles')
+        .insert(roleIds.map(role_id => ({ person_id: personId, role_id })));
+      assertNoError(roleErr, 'Add roles');
+    }
+    if(fields.training.length){
+      const { error: trErr } = await supabaseClient
+        .from('person_training')
+        .insert(fields.training.map(training_title => ({ person_id: personId, training_title })));
+      assertNoError(trErr, 'Add training');
+    }
+  }catch(err){
+    // Don't leave a half-built person on the roster: undo the row we just
+    // created so the admin can fix the input and try the whole thing again.
+    await supabaseClient.from('people').delete().eq('id', personId);
+    throw err;
+  }
+
+  const classes = fields.classes.slice().sort(naturalCompare);
+  const person = {
+    id: personId,
+    num: legacyNum,
+    first: fields.first,
+    middle: fields.middle || null,
+    last: fields.last,
+    name: [fields.first, fields.middle, fields.last].filter(Boolean).join(' '),
+    giaoLyRole: fields.roles.join(', '),
+    roles: fields.roles.slice(),
+    classes,
+    class: classes.join(', '),
+    catecheticalTraining: fields.training.slice(),
+    safeEnvironment: fields.safeEnvironment,
+    yearsExperience: fields.yearsExperience || null,
+  };
+  PEOPLE.push(person);
+  return person;
+}
+
+async function deletePerson(person){
+  // RLS silently affects zero rows rather than erroring, so check the
+  // returned rows instead of trusting the absence of `error`.
+  const { data, error } = await supabaseClient
+    .from('people')
+    .delete()
+    .eq('id', person.id)
+    .select('id');
+  if(error) throw new PersistError('Delete ' + person.name + ': ' + error.message);
+  if(!data || data.length === 0){
+    throw new PersistError('Delete ' + person.name + ': no rows deleted — your account may no longer have Tech Admin access.');
+  }
+  // Classes, roles, training and attendance rows cascade in the database;
+  // mirror that locally so nothing re-renders from stale state.
+  PEOPLE = PEOPLE.filter(p => p.id !== person.id);
+  EVENTS.forEach(e => { e.attendeeIds = e.attendeeIds.filter(id => id !== person.id); });
+}
+
+function directoryRows(){
+  const q = directoryQuery.trim().toLowerCase();
+  return PEOPLE
+    .filter(p => !q || (p.name + ' ' + (p.class || '')).toLowerCase().includes(q))
+    .slice()
+    .sort((a, b) => naturalCompare(a.name, b.name));
+}
+
+function directoryRowHtml(p, canManage){
+  if(canManage && directoryPendingDeleteId === p.id){
+    const isSelf = currentCoordinator && currentCoordinator.personId === p.id;
+    return `
+      <div class="dir-confirm">
+        <span class="dir-confirm-text">
+          Remove <b>${escapeHtml(p.name)}</b> from the roster? Their classes, roles, training
+          and event attendance are deleted too. This cannot be undone.
+          ${isSelf ? '<br><b>This is your own record — deleting it removes your admin access.</b>' : ''}
+        </span>
+        <button class="edit-btn edit-btn-danger" data-confirm-delete="${escapeAttr(p.id)}">Confirm Delete</button>
+        <button class="edit-btn" data-cancel-delete="1">Cancel</button>
+      </div>`;
+  }
+  return `
+    <div class="dir-row">
+      ${canManage ? `<button class="dir-delete-btn" data-delete="${escapeAttr(p.id)}" aria-label="Delete ${escapeAttr(p.name)}" title="Delete ${escapeAttr(p.name)}">&#10005;</button>` : ''}
+      <button class="dir-row-name" data-person-id="${escapeAttr(p.id)}">${escapeHtml(p.name)}</button>
+      <span class="dir-row-class">${escapeHtml(p.class) || '—'}</span>
+    </div>`;
+}
+
+function renderDirectoryModal(){
+  const content = document.getElementById('directoryModalContent');
+  if(!content) return;
+  const canManage = isTechAdmin();
+  const rows = directoryRows();
+  content.innerHTML = `
+    <div class="modal-eyebrow">Roster</div>
+    <div class="modal-header-row" style="margin-bottom:10px;">
+      <h3 class="modal-name serif">All Catechists</h3>
+      ${canManage ? `<button class="edit-btn edit-btn-primary" id="dirAddBtn">+ Add Catechist</button>` : ''}
+    </div>
+    <p class="edit-note"><b>${PEOPLE.length}</b> on the roster${canManage
+      ? ' — as a Tech Admin you can add someone, or delete with the ✕ beside a name.'
+      : ' — click a name for their details.'}</p>
+    <input type="text" id="dirSearch" class="roster-search" placeholder="Search names or class…"
+           style="width:100%;box-sizing:border-box;margin-bottom:10px;" value="${escapeAttr(directoryQuery)}">
+    <div class="dir-list">
+      ${rows.length
+        ? rows.map(p => directoryRowHtml(p, canManage)).join('')
+        : `<div class="roster-empty">${PEOPLE.length ? 'No one matches your search.' : 'The roster has not loaded.'}</div>`}
+    </div>
+  `;
+
+  const searchInput = content.querySelector('#dirSearch');
+  if(searchInput){
+    searchInput.addEventListener('input', () => {
+      directoryQuery = searchInput.value;
+      renderDirectoryModal();
+      const el = document.getElementById('dirSearch');
+      if(el){ el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+    });
+  }
+
+  content.querySelectorAll('.dir-row-name').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const person = PEOPLE.find(p => p.id === btn.dataset.personId);
+      if(person) openPersonModal(person);
+    });
+  });
+
+  if(!canManage) return;
+
+  const addBtn = content.querySelector('#dirAddBtn');
+  if(addBtn) addBtn.addEventListener('click', openAddPersonModal);
+
+  content.querySelectorAll('.dir-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      directoryPendingDeleteId = btn.dataset.delete;
+      renderDirectoryModal();
+    });
+  });
+  content.querySelectorAll('[data-cancel-delete]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      directoryPendingDeleteId = null;
+      renderDirectoryModal();
+    });
+  });
+  content.querySelectorAll('[data-confirm-delete]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const person = PEOPLE.find(p => p.id === btn.dataset.confirmDelete);
+      if(!person){ directoryPendingDeleteId = null; renderDirectoryModal(); return; }
+      btn.disabled = true;
+      btn.textContent = 'Deleting…';
+      try{
+        await deletePerson(person);
+      }catch(e){
+        console.error('Delete person failed', e);
+        showToast('Could not delete: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Confirm Delete';
+        return;
+      }
+      directoryPendingDeleteId = null;
+      showToast('Removed ' + person.name + ' from the roster.');
+      renderDirectoryModal();
+      renderStage();
+    });
+  });
+}
+
+function openDirectoryModal(){
+  directoryQuery = '';
+  directoryPendingDeleteId = null;
+  renderDirectoryModal();
+  document.getElementById('directoryModalOverlay').classList.add('open');
+}
+function closeDirectoryModal(){
+  document.getElementById('directoryModalOverlay').classList.remove('open');
+  directoryPendingDeleteId = null;
+}
+
+document.getElementById('openDirectoryBtn').addEventListener('click', openDirectoryModal);
+document.getElementById('directoryModalClose').addEventListener('click', closeDirectoryModal);
+document.getElementById('directoryModalOverlay').addEventListener('click', (e) => {
+  if(e.target === document.getElementById('directoryModalOverlay')) closeDirectoryModal();
+});
+
+// ---------------- ADD CATECHIST POP-UP ----------------
+function renderAddPersonModal(){
+  const content = document.getElementById('addPersonModalContent');
+  if(!content) return;
+  content.innerHTML = `
+    <div class="modal-eyebrow">Roster</div>
+    <h3 class="modal-name serif">Add a Catechist</h3>
+    <p class="edit-note">First and last name are required; everything else is optional.</p>
+    <div class="add-form-grid">
+      <div class="add-field-row">
+        <div class="add-field">
+          <span class="mf-label">First Name *</span>
+          <input type="text" id="addFirst" class="roster-search" autocomplete="off">
+        </div>
+        <div class="add-field">
+          <span class="mf-label">Middle Name</span>
+          <input type="text" id="addMiddle" class="roster-search" autocomplete="off">
+        </div>
+        <div class="add-field">
+          <span class="mf-label">Last Name *</span>
+          <input type="text" id="addLast" class="roster-search" autocomplete="off">
+        </div>
+      </div>
+      <div class="add-field">
+        <span class="mf-label">Years of Experience</span>
+        <input type="text" id="addYears" class="roster-search" placeholder="e.g. 3" autocomplete="off">
+      </div>
+      <div class="add-field">
+        <span class="mf-label">Class</span>
+        <input type="text" id="addClasses" class="roster-search" placeholder="Lop 1, Lop 2 — separate with commas" autocomplete="off">
+      </div>
+      <div class="add-field">
+        <span class="mf-label">Safe Environment</span>
+        <div class="se-toggle-row">
+          <label class="se-radio"><input type="radio" name="addSeRadio" value="Yes"> Completed</label>
+          <label class="se-radio"><input type="radio" name="addSeRadio" value="No" checked> Not Completed</label>
+        </div>
+      </div>
+      <div class="add-field">
+        <span class="mf-label">Giao Ly Role</span>
+        <div class="role-checkbox-list" id="addRoleList">
+          ${ALL_ROLE_OPTIONS.map(r => `
+            <label class="role-checkbox">
+              <input type="checkbox" value="${escapeAttr(r)}" ${r === 'Catechist' ? 'checked' : ''}> ${escapeHtml(r)}
+            </label>`).join('')}
+        </div>
+      </div>
+      <div class="add-field">
+        <span class="mf-label">Catechetical Training</span>
+        <input type="text" id="addTraining" class="roster-search" placeholder="Separate with commas (optional)" autocomplete="off">
+        <p class="edit-note" style="margin:4px 0 0;font-size:12px;">Training normally comes from Events attendance — only fill this in for training already completed.</p>
+      </div>
+    </div>
+    <p class="edit-error" id="addPersonError" style="display:none;"></p>
+    <div class="edit-save-row">
+      <button class="edit-btn edit-btn-primary" id="addPersonSaveBtn">Add Catechist</button>
+      <button class="edit-btn" id="addPersonCancelBtn">Cancel</button>
+    </div>
+  `;
+
+  const errEl = content.querySelector('#addPersonError');
+  const saveBtn = content.querySelector('#addPersonSaveBtn');
+  const showError = (msg) => {
+    errEl.textContent = msg;
+    errEl.style.display = 'block';
+  };
+
+  content.querySelector('#addPersonCancelBtn').addEventListener('click', closeAddPersonModal);
+
+  saveBtn.addEventListener('click', async () => {
+    const first = content.querySelector('#addFirst').value.trim();
+    const middle = content.querySelector('#addMiddle').value.trim();
+    const last = content.querySelector('#addLast').value.trim();
+    if(!first || !last){ showError('Enter both a first and a last name.'); return; }
+    if(!isTechAdmin()){ showError('Only a Tech Admin can add someone to the roster.'); return; }
+    const seChecked = content.querySelector('input[name="addSeRadio"]:checked');
+    const fields = {
+      first, middle, last,
+      yearsExperience: content.querySelector('#addYears').value.trim(),
+      classes: splitList(content.querySelector('#addClasses').value),
+      training: splitList(content.querySelector('#addTraining').value),
+      safeEnvironment: seChecked ? seChecked.value : 'No',
+      roles: Array.from(content.querySelectorAll('#addRoleList input[type="checkbox"]:checked')).map(el => el.value),
+    };
+    errEl.style.display = 'none';
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Adding…';
+    let person;
+    try{
+      person = await createPerson(fields);
+    }catch(e){
+      console.error('Add catechist failed', e);
+      showError('Could not add this person: ' + e.message);
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Add Catechist';
+      return;
+    }
+    closeAddPersonModal();
+    showToast('Added ' + person.name + ' to the roster.');
+    renderDirectoryModal();
+    renderStage();
+  });
+
+  content.querySelectorAll('input[type="text"]').forEach(el => {
+    el.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); saveBtn.click(); } });
+  });
+}
+
+function openAddPersonModal(){
+  renderAddPersonModal();
+  document.getElementById('addPersonModalOverlay').classList.add('open');
+}
+function closeAddPersonModal(){
+  document.getElementById('addPersonModalOverlay').classList.remove('open');
+}
+
+document.getElementById('addPersonModalClose').addEventListener('click', closeAddPersonModal);
+document.getElementById('addPersonModalOverlay').addEventListener('click', (e) => {
+  if(e.target === document.getElementById('addPersonModalOverlay')) closeAddPersonModal();
 });
 
 let currentRole = FRAMEWORK[0].role;
