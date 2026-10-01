@@ -34,11 +34,23 @@ jobs:
         run: composer validate --no-check-publish && composer install --prefer-dist --no-progress
 
 
+      # deploy/ is a build output, not a second source file. Regenerating it
+      # here is what stops it drifting from index.html by hand -- the same step
+      # the Static Web Apps workflow and netlify.toml already run.
+      - name: Stage the publish directory
+        run: |
+          cp index.html deploy/index.html
+          rm -rf deploy/.netlify
+          echo "deploy/index.html regenerated from source ($(wc -c < deploy/index.html) bytes)"
+
+      # Publish deploy/, NOT the repo root. The root ships supabase/migrations --
+      # the schema and every RLS policy -- to anyone who guesses the path, plus
+      # the roster spreadsheets if one is ever committed by mistake.
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: php-app
-          path: .
+          path: deploy
 
   deploy:
     runs-on: ubuntu-latest
