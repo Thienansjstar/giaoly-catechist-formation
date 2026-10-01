@@ -320,6 +320,7 @@
     color:var(--navy);
   }
   .roster-search:focus{outline:2px solid var(--gold-soft);outline-offset:1px;}
+  select.roster-search{cursor:pointer;min-width:0;}
   .roster-table-wrap{
     max-height:460px;overflow-y:auto;overflow-x:auto;
     border-top:1px solid var(--line);
@@ -1374,37 +1375,109 @@ function initDraftAll(p){
   draft.giaoLyRole = (p.roles || []).slice();
 }
 
+// ---------------- CLASS / TRAINING PICKERS ----------------
+// Both fields are multi-valued and drawn from a small, known set, so they are
+// chosen from a dropdown rather than typed. Typing them free-hand is how you
+// end up with "Lop 1", "lop 1" and "Lop1" as three different classes. The
+// options come from the data itself, so a class or training title added
+// anywhere shows up here without a code change.
+
+function knownClasses(){
+  return [...new Set(PEOPLE.flatMap(p => p.classes || []))].sort(naturalCompare);
+}
+
+// Events are the intended source of training credit, so their titles belong in
+// the list even when nobody has been credited with one yet.
+function knownTrainingTitles(){
+  return [...new Set([
+    ...PEOPLE.flatMap(p => p.catecheticalTraining || []),
+    ...EVENTS.map(e => e.title),
+  ])].sort(naturalCompare);
+}
+
+// Renders into `container`: the chosen values as a removable list, then a
+// dropdown of everything not yet chosen. `state` is mutated in place, and only
+// this container re-renders — so the rest of a form keeps whatever was typed
+// into it. "+ Add new…" swaps the dropdown for a text box, because a brand-new
+// class or training title still has to be enterable the first time.
+function renderPicker(container, state, options, opts){
+  const remaining = options.filter(o => !state.includes(o));
+  container.innerHTML = `
+    <ul class="edit-training-list">
+      ${state.map((v, i) => `
+        <li>
+          <span>${escapeHtml(v)}</span>
+          <button type="button" class="edit-remove-btn picker-remove" data-idx="${i}" aria-label="Remove ${escapeAttr(v)}">×</button>
+        </li>`).join('') || `<li class="edit-empty-row">${escapeHtml(opts.emptyText)}</li>`}
+    </ul>
+    <div class="edit-add-row">
+      <select class="roster-search picker-select" style="flex:1;" aria-label="${escapeAttr(opts.placeholder)}">
+        <option value="">${escapeHtml(opts.placeholder)}</option>
+        ${remaining.map(o => `<option value="${escapeAttr(o)}">${escapeHtml(o)}</option>`).join('')}
+        <option value="__new__">+ Add new…</option>
+      </select>
+      <input type="text" class="roster-search picker-new" placeholder="${escapeAttr(opts.newPlaceholder)}"
+             style="flex:1;display:none;" autocomplete="off">
+      <button type="button" class="edit-btn picker-add">Add</button>
+    </div>
+  `;
+
+  const select = container.querySelector('.picker-select');
+  const newInput = container.querySelector('.picker-new');
+  const redraw = () => renderPicker(container, state, options, opts);
+
+  select.addEventListener('change', () => {
+    const isNew = select.value === '__new__';
+    newInput.style.display = isNew ? '' : 'none';
+    if(isNew) newInput.focus();
+  });
+
+  const addValue = () => {
+    const value = select.value === '__new__' ? newInput.value.trim() : select.value;
+    if(!value || state.includes(value)) return;
+    state.push(value);
+    state.sort(naturalCompare);
+    redraw();
+  };
+  container.querySelector('.picker-add').addEventListener('click', addValue);
+  newInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ e.preventDefault(); addValue(); }
+  });
+
+  container.querySelectorAll('.picker-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.splice(Number(btn.dataset.idx), 1);
+      redraw();
+    });
+  });
+}
+
+// Wires every picker placeholder inside `root`. `sources` maps the
+// data-picker name to the array it edits.
+function wirePickers(root, sources){
+  root.querySelectorAll('[data-picker]').forEach(el => {
+    const name = el.dataset.picker;
+    if(name === 'classes'){
+      renderPicker(el, sources.classes, knownClasses(), {
+        emptyText: 'No classes assigned yet.',
+        placeholder: 'Choose a class…',
+        newPlaceholder: 'New class name…',
+      });
+    } else if(name === 'training'){
+      renderPicker(el, sources.training, knownTrainingTitles(), {
+        emptyText: 'No training items yet.',
+        placeholder: 'Choose a training…',
+        newPlaceholder: 'New training title…',
+      });
+    }
+  });
+}
+
 function fieldEditorInner(target){
-  if(target === 'catecheticalTraining'){
-    return `
-      <ul class="edit-training-list">
-        ${draft.training.map((t,i) => `
-          <li>
-            <span>${escapeHtml(t)}</span>
-            <button class="edit-remove-btn" data-idx="${i}" aria-label="Remove">×</button>
-          </li>`).join('') || `<li class="edit-empty-row">No training items yet.</li>`}
-      </ul>
-      <div class="edit-add-row">
-        <input type="text" id="newTrainingInput" placeholder="Add training item…" class="roster-search" style="flex:1;">
-        <button class="edit-btn" id="addTrainingBtn">Add</button>
-      </div>
-    `;
-  }
-  if(target === 'classes'){
-    return `
-      <ul class="edit-training-list">
-        ${draft.classes.map((c,i) => `
-          <li>
-            <span>${escapeHtml(c)}</span>
-            <button class="edit-remove-class-btn" data-classidx="${i}" aria-label="Remove">×</button>
-          </li>`).join('') || `<li class="edit-empty-row">No classes assigned yet.</li>`}
-      </ul>
-      <div class="edit-add-row">
-        <input type="text" id="newClassInput" placeholder="Add class (e.g. Lop 1)…" class="roster-search" style="flex:1;">
-        <button class="edit-btn" id="addClassBtn">Add</button>
-      </div>
-    `;
-  }
+  // Filled in by wirePickers() once this HTML is in the DOM — the picker
+  // manages its own re-renders so the rest of the modal is left alone.
+  if(target === 'catecheticalTraining') return `<div data-picker="training"></div>`;
+  if(target === 'classes') return `<div data-picker="classes"></div>`;
   if(target === 'safeEnvironment'){
     return `
       <div class="se-toggle-row">
@@ -1491,37 +1564,7 @@ function renderPersonModal(){
   }
 
   if(modalMode === 'edit'){
-    personModalContent.querySelectorAll('.edit-remove-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = Number(btn.dataset.idx);
-        draft.training.splice(idx, 1);
-        renderPersonModal();
-      });
-    });
-    personModalContent.querySelectorAll('.edit-remove-class-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = Number(btn.dataset.classidx);
-        draft.classes.splice(idx, 1);
-        renderPersonModal();
-      });
-    });
-    const addClassBtn = personModalContent.querySelector('#addClassBtn');
-    const newClassInput = personModalContent.querySelector('#newClassInput');
-    const addClass = () => {
-      const val = newClassInput.value.trim();
-      if(val){ draft.classes.push(val); newClassInput.value=''; renderPersonModal(); }
-    };
-    if(addClassBtn) addClassBtn.addEventListener('click', addClass);
-    if(newClassInput) newClassInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); addClass(); } });
-
-    const addBtn = personModalContent.querySelector('#addTrainingBtn');
-    const newInput = personModalContent.querySelector('#newTrainingInput');
-    const addItem = () => {
-      const val = newInput.value.trim();
-      if(val){ draft.training.push(val); newInput.value=''; renderPersonModal(); }
-    };
-    if(addBtn) addBtn.addEventListener('click', addItem);
-    if(newInput) newInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); addItem(); } });
+    wirePickers(personModalContent, { classes: draft.classes, training: draft.training });
 
     const saveBtn = personModalContent.querySelector('#saveFieldBtn');
     const cancelEditBtn = personModalContent.querySelector('#cancelEditBtn');
@@ -2026,9 +2069,7 @@ function isTechAdmin(){
   return !!(currentCoordinator && (currentCoordinator.roles || []).includes('Tech Admin'));
 }
 
-function splitList(value){
-  return [...new Set(String(value || '').split(',').map(s => s.trim()).filter(Boolean))];
-}
+let addDraft = { classes: [], training: [] }; // the Add form's two picker fields
 
 function nextLegacyNum(){
   return PEOPLE.reduce((max, p) => Math.max(max, Number(p.num) || 0), 0) + 1;
@@ -2272,7 +2313,7 @@ function renderAddPersonModal(){
       </div>
       <div class="add-field">
         <span class="mf-label">Class</span>
-        <input type="text" id="addClasses" class="roster-search" placeholder="Lop 1, Lop 2 — separate with commas" autocomplete="off">
+        <div class="edit-training-box" data-picker="classes"></div>
       </div>
       <div class="add-field">
         <span class="mf-label">Safe Environment</span>
@@ -2292,7 +2333,7 @@ function renderAddPersonModal(){
       </div>
       <div class="add-field">
         <span class="mf-label">Catechetical Training</span>
-        <input type="text" id="addTraining" class="roster-search" placeholder="Separate with commas (optional)" autocomplete="off">
+        <div class="edit-training-box" data-picker="training"></div>
         <p class="edit-note" style="margin:4px 0 0;font-size:12px;">Training normally comes from Events attendance — only fill this in for training already completed.</p>
       </div>
     </div>
@@ -2302,6 +2343,9 @@ function renderAddPersonModal(){
       <button class="edit-btn" id="addPersonCancelBtn">Cancel</button>
     </div>
   `;
+
+  addDraft = { classes: [], training: [] };
+  wirePickers(content, addDraft);
 
   const errEl = content.querySelector('#addPersonError');
   const saveBtn = content.querySelector('#addPersonSaveBtn');
@@ -2322,8 +2366,8 @@ function renderAddPersonModal(){
     const fields = {
       first, middle, last,
       yearsExperience: content.querySelector('#addYears').value.trim(),
-      classes: splitList(content.querySelector('#addClasses').value),
-      training: splitList(content.querySelector('#addTraining').value),
+      classes: addDraft.classes.slice(),
+      training: addDraft.training.slice(),
       safeEnvironment: seChecked ? seChecked.value : 'No',
       roles: Array.from(content.querySelectorAll('#addRoleList input[type="checkbox"]:checked')).map(el => el.value),
     };
