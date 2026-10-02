@@ -2157,6 +2157,58 @@ async function deletePerson(person){
   EVENTS.forEach(e => { e.attendeeIds = e.attendeeIds.filter(id => id !== person.id); });
 }
 
+// ---------------- CSV EXPORT ----------------
+// The roster exports as a grid rather than a list: one row per catechist, one
+// column per training title, with an X where they have been credited. A
+// spreadsheet can then be sorted or filtered by any single training, which a
+// column of comma-joined titles would not allow.
+function csvCell(v){
+  const s = (v == null) ? '' : String(v);
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function rosterCsvRows(people){
+  const titles = knownTrainingTitles();
+  const header = ['Name', 'Class', 'Role(s)', 'Years of Experience', 'Safe Environment', ...titles];
+  const rows = people.map(p => {
+    const completed = new Set(p.catecheticalTraining || []);
+    return [
+      p.name,
+      (p.classes || []).join(', '),
+      (p.roles || []).join(', '),
+      p.yearsExperience,
+      p.safeEnvironment,
+      ...titles.map(t => completed.has(t) ? 'X' : ''),
+    ];
+  });
+  return [header, ...rows];
+}
+
+function toCsv(rows){
+  return rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+}
+
+function downloadCsv(filename, csv){
+  // The BOM is what makes Excel read the file as UTF-8 — without it the
+  // Vietnamese names come out mangled.
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportRosterCsv(people){
+  if(!people.length){ showToast('Nothing to export.'); return; }
+  const stamp = new Date().toISOString().slice(0, 10);
+  downloadCsv(`catechists-${stamp}.csv`, toCsv(rosterCsvRows(people)));
+  showToast(`Exported ${people.length} catechist${people.length === 1 ? '' : 's'}.`);
+}
+
 function directoryRows(){
   const q = directoryQuery.trim().toLowerCase();
   return PEOPLE
@@ -2196,7 +2248,10 @@ function renderDirectoryModal(){
     <div class="modal-eyebrow">Roster</div>
     <div class="modal-header-row" style="margin-bottom:10px;">
       <h3 class="modal-name serif">All Catechists</h3>
-      ${canManage ? `<button class="edit-btn edit-btn-primary" id="dirAddBtn">+ Add Catechist</button>` : ''}
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="edit-btn" id="dirExportBtn">Export CSV</button>
+        ${canManage ? `<button class="edit-btn edit-btn-primary" id="dirAddBtn">+ Add Catechist</button>` : ''}
+      </div>
     </div>
     <p class="edit-note"><b>${PEOPLE.length}</b> on the roster${canManage
       ? ' — as a Tech Admin you can add someone, or delete with the ✕ beside a name.'
@@ -2226,6 +2281,11 @@ function renderDirectoryModal(){
       if(person) openPersonModal(person);
     });
   });
+
+  // Exports whatever the search has narrowed the list to, so what you get
+  // matches what you are looking at.
+  const exportBtn = content.querySelector('#dirExportBtn');
+  if(exportBtn) exportBtn.addEventListener('click', () => exportRosterCsv(directoryRows()));
 
   if(!canManage) return;
 
