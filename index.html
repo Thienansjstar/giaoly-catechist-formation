@@ -625,6 +625,18 @@
   }
   .se-yes{background:#e7efdf;color:var(--sage-dark, #4b6b3f);}
   .se-no{background:#f5e2df;color:var(--maroon);}
+  /* ---- standards of conduct cell ---- */
+  .sc-mark{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:28px;height:28px;border-radius:999px;
+    font-family:'Inter',sans-serif;font-weight:700;font-size:15px;line-height:1;
+  }
+  .sc-mark.sc-yes{background:#e7efdf;color:var(--sage-dark, #4b6b3f);}
+  .sc-mark.sc-no{background:#f1efea;color:#9a958c;}
+  button.sc-toggle{border:1px solid transparent;cursor:pointer;padding:0;}
+  button.sc-toggle:hover{border-color:var(--sage-dark, #4b6b3f);}
+  button.sc-toggle:focus-visible{outline:2px solid var(--maroon);outline-offset:2px;}
+  button.sc-toggle[disabled]{opacity:.5;cursor:progress;}
   table.roster-table td.col-training{max-width:340px;white-space:normal;}
   table.roster-table td.col-training .role-list li{white-space:normal;}
   .role-list{
@@ -1192,10 +1204,47 @@ function roleListHtml(giaoLyRole){
   if(parts.length <= 1) return escapeHtml(prettifyRole(parts[0] || giaoLyRole));
   return `<ul class="role-list">${parts.map(r => `<li>${escapeHtml(prettifyRole(r))}</li>`).join('')}</ul>`;
 }
+// Standards of Conduct is stored as an ordinary training credit -- the
+// 2026-09-12 event and its attendance are what write it -- but it reads as a
+// yes/no per catechist rather than a session attended, so it gets its own
+// roster column. Everywhere that lists "training" leaves it out, or it would
+// appear twice.
+const STANDARDS_TITLE = 'Catechist Standards of Conduct';
+
+function hasStandards(p){
+  return (p.catecheticalTraining || []).includes(STANDARDS_TITLE);
+}
+function withoutStandards(training){
+  return (training || []).filter(t => t !== STANDARDS_TITLE);
+}
+// The picker edits a copy with no Standards entry, so it has to go back in
+// before saving: persistTraining() rewrites the whole list and would drop it.
+function withStandards(list, person){
+  return hasStandards(person) ? [...list, STANDARDS_TITLE].sort(naturalCompare) : list.slice();
+}
+
 function trainingListHtml(training){
-  if(!training || !training.length) return `<span class="mf-empty">No training recorded yet</span>`;
-  const n = training.length;
-  return `<details class="training-details"><summary>${n} Training${n===1?'':'s'}</summary><ul class="role-list">${training.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul></details>`;
+  const list = withoutStandards(training);
+  if(!list.length) return `<span class="mf-empty">No training recorded yet</span>`;
+  const n = list.length;
+  return `<details class="training-details"><summary>${n} Training${n===1?'':'s'}</summary><ul class="role-list">${list.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul></details>`;
+}
+
+// Same rule as editing training: Program Coordinators / Tech Admins only,
+// since this credit is meant to flow from the event's attendance.
+function canManageStandards(){
+  return !!(currentCoordinator && currentCoordinator.unrestricted);
+}
+
+// A plain mark for everyone, signed in or not; Program Coordinators / Tech
+// Admins get the same mark as a toggle button.
+function standardsCellHtml(p, canManage){
+  const done = hasStandards(p);
+  const label = done ? 'Signed' : 'Not signed';
+  if(!canManage){
+    return `<span class="sc-mark ${done ? 'sc-yes' : 'sc-no'}" title="${label}" aria-label="${label}">${done ? '\u2713' : '\u2014'}</span>`;
+  }
+  return `<button type="button" class="sc-mark sc-toggle ${done ? 'sc-yes' : 'sc-no'}" data-sc-num="${p.num}" role="switch" aria-checked="${done}" title="${label} \u2014 click to ${done ? 'clear' : 'mark signed'}" aria-label="Standards of Conduct for ${escapeAttr(p.name)}: ${label}">${done ? '\u2713' : '\u2014'}</button>`;
 }
 function safeEnvBadgeHtml(val){
   const isYes = String(val).trim().toLowerCase() === 'yes';
@@ -1266,6 +1315,32 @@ async function persistTraining(p){
     const { error: insErr } = await supabaseClient.from('person_training').insert(rows);
     assertNoError(insErr, 'Save training for ' + p.num);
   }
+}
+
+// Toggling the column goes through the event's attendance when that event
+// exists, so the DB trigger writes the credit and the Events panel and this
+// column can never disagree. Only if the event has been deleted does it fall
+// back to writing the bare credit row.
+async function setStandardsSigned(p, signed){
+  const ev = EVENTS.find(e => e.title === STANDARDS_TITLE);
+  if(ev){
+    await setAttendance(ev.id, p.id, signed);
+    return;
+  }
+  if(signed){
+    const { error } = await supabaseClient
+      .from('person_training')
+      .upsert({ person_id: p.id, training_title: STANDARDS_TITLE }, { onConflict: 'person_id,training_title' });
+    assertNoError(error, 'Mark Standards of Conduct for ' + p.name);
+  } else {
+    const { error } = await supabaseClient
+      .from('person_training').delete()
+      .eq('person_id', p.id).eq('training_title', STANDARDS_TITLE);
+    assertNoError(error, 'Clear Standards of Conduct for ' + p.name);
+  }
+  p.catecheticalTraining = signed
+    ? [...new Set([...(p.catecheticalTraining || []), STANDARDS_TITLE])].sort(naturalCompare)
+    : withoutStandards(p.catecheticalTraining);
 }
 
 async function loadPeopleFromSupabase(){
@@ -1369,7 +1444,7 @@ function getModalPerson(){
 }
 
 function initDraftAll(p){
-  draft.training = (p.catecheticalTraining || []).slice();
+  draft.training = withoutStandards(p.catecheticalTraining);
   draft.classes = (p.classes || []).slice();
   draft.safeEnvironment = (String(p.safeEnvironment).toLowerCase() === 'yes') ? 'Yes' : 'No';
   draft.giaoLyRole = (p.roles || []).slice();
@@ -1389,10 +1464,10 @@ function knownClasses(){
 // Events are the intended source of training credit, so their titles belong in
 // the list even when nobody has been credited with one yet.
 function knownTrainingTitles(){
-  return [...new Set([
+  return withoutStandards([...new Set([
     ...PEOPLE.flatMap(p => p.catecheticalTraining || []),
     ...EVENTS.map(e => e.title),
-  ])].sort(naturalCompare);
+  ])]).sort(naturalCompare);
 }
 
 // Renders into `container`: the chosen values as a removable list, then a
@@ -1502,10 +1577,15 @@ function fieldEditorInner(target){
 function fieldBlockHtml(target, label, viewValueHtml, wide){
   const cls = 'modal-field' + ((wide || modalMode === 'edit') ? ' modal-field-wide' : '');
   const trainingLocked = target === 'catecheticalTraining' && !(currentCoordinator && currentCoordinator.unrestricted);
+  // Standards of Conduct is set from its roster column (or Events attendance),
+  // so the modal only ever shows it.
+  const standardsLocked = target === 'standardsOfConduct';
 
-  if(modalMode !== 'edit' || trainingLocked){
+  if(modalMode !== 'edit' || trainingLocked || standardsLocked){
     const lockedNote = (modalMode === 'edit' && trainingLocked)
       ? `<p class="edit-note" style="margin:6px 0 0;font-size:12px;">Only Program Coordinators / Tech Admins can edit training — it's meant to come from Events attendance.</p>`
+      : (modalMode === 'edit' && standardsLocked)
+      ? `<p class="edit-note" style="margin:6px 0 0;font-size:12px;">Set from the Standards of Conduct column on the roster, or from Events attendance.</p>`
       : '';
     return `<div class="${cls}"><span class="mf-label">${label}</span><span class="mf-value">${viewValueHtml}</span>${lockedNote}</div>`;
   }
@@ -1536,6 +1616,7 @@ function renderPersonModal(){
       <div class="modal-field"><span class="mf-label">Years of Experience</span><span class="mf-value">${escapeHtml(p.yearsExperience) || '—'}</span></div>
       ${fieldBlockHtml('classes', 'Class', escapeHtml(p.class) || '—', true)}
       ${fieldBlockHtml('safeEnvironment', 'Safe Environment', safeEnvBadgeHtml(p.safeEnvironment), false)}
+      ${fieldBlockHtml('standardsOfConduct', 'Standards of Conduct', standardsCellHtml(p, false), false)}
       ${fieldBlockHtml('giaoLyRole', 'Giao Ly Role', roleListHtml(p.giaoLyRole), true)}
       ${fieldBlockHtml('catecheticalTraining', 'Catechetical Training', trainingListHtml(p.catecheticalTraining), true)}
     </div>
@@ -1587,7 +1668,7 @@ function renderPersonModal(){
       // persisted to the database.
       const pending = {
         num: p.num,
-        catecheticalTraining: draft.training.slice(),
+        catecheticalTraining: withStandards(draft.training, p),
         classes: draft.classes.slice(),
         safeEnvironment: seChecked ? seChecked.value : p.safeEnvironment,
         roles: roleChecked,
@@ -1774,6 +1855,7 @@ const rosterColumns = [
   {key:'class', label:'Class'},
   {key:'yearsExperience', label:'Years of Experience'},
   {key:'safeEnvironment', label:'Safe Environment'},
+  {key:'standardsOfConduct', label:'Standards of Conduct'},
   {key:'catecheticalTraining', label:'Catechetical Training'}
 ];
 
@@ -1825,9 +1907,13 @@ function buildRosterTable(container, roster){
 
     rows = rows.slice().sort((a,b) => {
       let av = a[state.sortKey], bv = b[state.sortKey];
+      if(state.sortKey === 'standardsOfConduct'){
+        av = hasStandards(a) ? 1 : 0;
+        bv = hasStandards(b) ? 1 : 0;
+      }
       if(state.sortKey === 'catecheticalTraining'){
-        av = (av || []).length;
-        bv = (bv || []).length;
+        av = withoutStandards(av).length;
+        bv = withoutStandards(bv).length;
       }
       if(av==null) av=''; if(bv==null) bv='';
       if(typeof av === 'string' && typeof bv === 'string'){
@@ -1844,6 +1930,7 @@ function buildRosterTable(container, roster){
         <td>${escapeHtml(p.class) || '—'}</td>
         <td>${escapeHtml(p.yearsExperience) || '—'}</td>
         <td>${safeEnvBadgeHtml(p.safeEnvironment)}</td>
+        <td>${standardsCellHtml(p, canManageStandards())}</td>
         <td class="col-training">${trainingListHtml(p.catecheticalTraining)}</td>
       </tr>`).join('');
 
@@ -1859,6 +1946,24 @@ function buildRosterTable(container, roster){
         const num = Number(btn.dataset.num);
         const person = PEOPLE.find(p => p.num === num);
         if(person) openPersonModal(person);
+      });
+    });
+
+    table.querySelectorAll('.sc-toggle').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const person = PEOPLE.find(p => p.num === Number(btn.dataset.scNum));
+        if(!person) return;
+        const next = !hasStandards(person);
+        btn.disabled = true;
+        try{
+          await setStandardsSigned(person, next);
+          showToast(`${person.name}: Standards of Conduct ${next ? 'marked signed' : 'cleared'}.`);
+          render();
+        }catch(e){
+          console.error('Standards of Conduct toggle failed', e);
+          showToast('Could not save: ' + e.message);
+          btn.disabled = false;
+        }
       });
     });
   }
@@ -1977,6 +2082,10 @@ function openEventModal(eventId){
 function closeEventModal(){
   document.getElementById('eventModalOverlay').classList.remove('open');
   currentEventId = null;
+  // Marking attendance changes training credit, which the roster behind this
+  // modal renders (the training count and the Standards of Conduct column),
+  // so redraw it on the way out rather than leaving it stale until reload.
+  renderStage();
 }
 
 function renderEventModal(){
@@ -2169,7 +2278,7 @@ function csvCell(v){
 
 function rosterCsvRows(people){
   const titles = knownTrainingTitles();
-  const header = ['Name', 'Class', 'Role(s)', 'Years of Experience', 'Safe Environment', ...titles];
+  const header = ['Name', 'Class', 'Role(s)', 'Years of Experience', 'Safe Environment', 'Standards of Conduct', ...titles];
   const rows = people.map(p => {
     const completed = new Set(p.catecheticalTraining || []);
     return [
@@ -2178,6 +2287,7 @@ function rosterCsvRows(people){
       (p.roles || []).join(', '),
       p.yearsExperience,
       p.safeEnvironment,
+      hasStandards(p) ? 'X' : '',
       ...titles.map(t => completed.has(t) ? 'X' : ''),
     ];
   });
